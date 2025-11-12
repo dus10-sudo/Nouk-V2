@@ -1,0 +1,23 @@
+-- schema
+create table if not exists public.rooms(id uuid primary key default gen_random_uuid(),slug text unique not null,title text not null,description text default '' not null,is_active boolean default true not null,created_at timestamptz not null default now());
+create table if not exists public.threads(id uuid primary key default gen_random_uuid(),room_id uuid not null references public.rooms(id) on delete cascade,title text not null,user_token uuid not null,created_at timestamptz not null default now(),last_activity timestamptz not null default now(),expires_at timestamptz not null default (now() + interval '24 hours'),ttl_hours int not null default 24,is_archived boolean not null default false);
+create table if not exists public.replies(id uuid primary key default gen_random_uuid(),thread_id uuid not null references public.threads(id) on delete cascade,user_token uuid not null,body text not null,created_at timestamptz not null default now());
+create index if not exists idx_threads_room on public.threads(room_id);
+create index if not exists idx_threads_expires on public.threads(expires_at);
+create index if not exists idx_threads_last_activity on public.threads(last_activity);
+create index if not exists idx_replies_thread on public.replies(thread_id);
+create or replace function public.bump_thread_last_activity() returns trigger language plpgsql as $$ begin update public.threads set last_activity = now() where id = new.thread_id; return new; end $$;
+drop trigger if exists trg_bump_thread_last_activity on public.replies;
+create trigger trg_bump_thread_last_activity after insert on public.replies for each row execute function public.bump_thread_last_activity();
+create or replace function public.archive_expired_threads() returns void language sql as $$ update public.threads set is_archived = true where is_archived = false and expires_at <= now(); $$;
+create or replace function public.extend_thread(p_thread_id uuid, p_extra_hours int) returns void language sql security definer set search_path = public as $$ update public.threads set expires_at = expires_at + make_interval(hours => p_extra_hours), ttl_hours = ttl_hours + p_extra_hours where id = p_thread_id; $$;
+insert into public.rooms(slug,title,description) values ('living','Living Room','General chat, low stress'),('kitchen','Kitchen','Everyday food & warmth'),('cinema','Cinema','Movies & shows'),('arcade','Arcade','Games & creative play'),('library','Library','Reflection & ideas'),('lounge','Lounge','Sports & socializing') on conflict(slug) do nothing;
+alter table public.rooms enable row level security;
+alter table public.threads enable row level security;
+alter table public.replies enable row level security;
+drop policy if exists rooms_read_all on public.rooms; create policy rooms_read_all on public.rooms for select using (true);
+drop policy if exists threads_read_all on public.threads; create policy threads_read_all on public.threads for select using (true);
+drop policy if exists replies_read_all on public.replies; create policy replies_read_all on public.replies for select using (true);
+drop policy if exists threads_insert_all on public.threads; create policy threads_insert_all on public.threads for insert with check (true);
+drop policy if exists replies_insert_all on public.replies; create policy replies_insert_all on public.replies for insert with check (true);
+do $$ begin begin execute 'alter publication supabase_realtime add table public.threads'; exception when others then null; end; begin execute 'alter publication supabase_realtime add table public.replies'; exception when others then null; end; end $$;
