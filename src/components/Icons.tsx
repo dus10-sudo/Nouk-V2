@@ -1,78 +1,106 @@
-import React from 'react';
+// src/components/Icons.tsx
+import type { SVGProps } from "react";
 
-export type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
+type IconProps = SVGProps<SVGSVGElement>;
 
-function makeIcon(path: React.ReactNode) {
-  return ({ size = 28, ...rest }: IconProps) => (
+export function IconLibrary(props: IconProps) {
+  return (
     <svg
-      width={size}
-      height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...rest}
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
     >
-      {path}
+      <rect x="4" y="5" width="4" height="14" rx="1.2" />
+      <rect x="10" y="3" width="4" height="16" rx="1.2" />
+      <rect x="16" y="7" width="4" height="12" rx="1.2" />
     </svg>
   );
 }
 
-/** Library (books) */
-export const IconLibrary = makeIcon(
-  <>
-    <rect x="4" y="3" width="3" height="18" />
-    <rect x="9" y="3" width="3" height="18" />
-    <path d="M16 4h2a2 2 0 0 1 2 2v14h-4V4z" />
-  </>
-);
+export function IconKitchen(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <path d="M7 3v18M5 7h4M13 4h4a1 1 0 0 1 1 1v6.5a3.5 3.5 0 0 1-7 0V5a1 1 0 0 1 1-1Z" />
+    </svg>
+  );
+}
 
-/** Kitchen (pot) */
-export const IconKitchen = makeIcon(
-  <>
-    <rect x="3" y="9" width="18" height="9" rx="2" />
-    <path d="M7 9V7a2 2 0 0 1 2-2h6" />
-    <path d="M12 5h7" />
-  </>
-);
+export function IconTheater(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <rect x="3" y="5" width="18" height="12" rx="2" />
+      <path d="M8 17 6 20M16 17l2 3" />
+      <circle cx="9" cy="11" r="1" />
+      <circle cx="15" cy="11" r="1" />
+    </svg>
+  );
+}
 
-/** Theater (screen) */
-export const IconTheater = makeIcon(
-  <>
-    <rect x="3" y="6" width="18" height="12" rx="2" />
-    <path d="M7 20h10" />
-  </>
-);
+export function IconGame(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <rect x="4" y="8" width="16" height="8" rx="3" />
+      <path d="M9 10v4M7 12h4" />
+      <circle cx="16" cy="11" r="1" />
+      <circle cx="18" cy="13" r="1" />
+    </svg>
+  );
+}
 
-/** Game Room (gamepad) */
-export const IconGame = makeIcon(
-  <>
-    <rect x="3" y="9" width="18" height="6" rx="3" />
-    <circle cx="9" cy="12" r="0.8" />
-    <circle cx="11" cy="12" r="0.8" />
-    <circle cx="14.5" cy="12" r="0.8" />
-    <circle cx="16.5" cy="12" r="0.8" />
-  </>
-);
+export function IconGarage(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <path d="M4 9 12 4l8 5v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
+      <rect x="8" y="12" width="8" height="5" rx="0.7" />
+      <path d="M8 14h8" />
+    </svg>
+  );
+}
 
-/** Garage (toolbox) */
-export const IconGarage = makeIcon(
-  <>
-    <rect x="4" y="8" width="16" height="10" rx="2" />
-    <path d="M9 8V6h6v2" />
-    <path d="M8 13h8" />
-  </>
-);
+export function IconStudy(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <path d="M4 7.5 12 4l8 3.5-8 3.5z" />
+      <path d="M6 10v6.5L12 20l6-3.5V10" />
+    </svg>
+  );
+}
 
-/** Study (desk) */
-export const IconStudy = makeIcon(
-  <>
-    <rect x="3" y="10" width="18" height="8" rx="2" />
-    <path d="M7 10V7h10v3" />
-  </>
-);
-
-/** Small chevron (used in RoomCard) */
-export const IconChevron = makeIcon(<path d="M9 6l6 6-6 6" />);
+export function IconChevron(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+      className={`w-5 h-5 ${props.className ?? ""}`}
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
