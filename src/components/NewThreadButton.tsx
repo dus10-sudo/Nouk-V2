@@ -1,9 +1,8 @@
-// src/components/NewThreadButton.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createThread } from '@/lib/supabase';
+import { createThread } from '@/server/actions';
 
 type Props = {
   roomSlug: string;
@@ -17,129 +16,102 @@ export default function NewThreadButton({ roomSlug }: Props) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const reset = () => {
-    setTitle('');
-    setLink('');
-    setErr(null);
-  };
-
-  const onCreate = async () => {
-    setErr(null);
+  async function handleCreate() {
     const cleanTitle = title.trim();
-    const cleanLink = link.trim() || null;
-
+    const cleanLink = link.trim() ? link.trim() : null;
     if (!cleanTitle) {
-      setErr('Title is required.');
+      setErr('Please enter a title.');
       return;
     }
     setLoading(true);
+    setErr(null);
     try {
-      // createThread(roomSlug: string, title: string, link_url?: string | null)
       const threadId = await createThread(roomSlug, cleanTitle, cleanLink);
-      reset();
+      // reset + close
+      setTitle('');
+      setLink('');
       setOpen(false);
+      // navigate to the new thread
       router.push(`/t/${threadId}`);
     } catch (e: any) {
       setErr(e?.message ?? 'Failed to create thread.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <>
-      {/* Trigger */}
+    <div className="fixed bottom-5 right-5">
+      {/* FAB */}
       <button
-        type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full px-4 py-3 shadow-lg
-                   bg-orange-600 text-white hover:bg-orange-700 focus:outline-none
-                   focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition"
+        className="h-12 w-12 rounded-full shadow-lg transition active:scale-95
+                   bg-orange-600 text-white text-2xl leading-none"
         aria-label="Start a new thread"
+        title="Start a new thread"
       >
-        ＋
+        +
       </button>
 
-      {/* Simple sheet/modal */}
+      {/* Lightweight modal */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => !loading && setOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="new-thread-title"
         >
-          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 shadow-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 id="new-thread-title" className="text-lg font-semibold">
-                New thread
-              </h2>
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold mb-3 dark:text-white">Start a thread</h2>
+
+            <label className="block text-sm mb-1 dark:text-zinc-200">Title</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What would you like to discuss?"
+              className="w-full mb-3 rounded-xl border px-3 py-2 outline-none
+                         border-zinc-300 focus:border-orange-500 dark:bg-zinc-800
+                         dark:border-zinc-700 dark:text-white"
+              disabled={loading}
+            />
+
+            <label className="block text-sm mb-1 dark:text-zinc-200">
+              Optional link (YouTube, Spotify, etc.)
+            </label>
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://…"
+              className="w-full mb-3 rounded-xl border px-3 py-2 outline-none
+                         border-zinc-300 focus:border-orange-500 dark:bg-zinc-800
+                         dark:border-zinc-700 dark:text-white"
+              disabled={loading}
+            />
+
+            {err && <p className="mb-3 text-sm text-red-600">{err}</p>}
+
+            <div className="flex gap-2 justify-end">
               <button
-                onClick={() => {
-                  setOpen(false);
-                  reset();
-                }}
-                className="text-sm opacity-70 hover:opacity-100"
+                onClick={() => !loading && setOpen(false)}
+                className="px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 dark:text-white"
+                disabled={loading}
               >
-                Close
+                Cancel
               </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm mb-1">Title *</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="What would you like to talk about?"
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700
-                             bg-white dark:bg-zinc-950 px-3 py-2 outline-none
-                             focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1">Optional link (YouTube, Spotify…)</label>
-                <input
-                  type="url"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="https://…"
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700
-                             bg-white dark:bg-zinc-950 px-3 py-2 outline-none
-                             focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {err && (
-                <p className="text-sm text-red-600 dark:text-red-400">{err}</p>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    reset();
-                  }}
-                  className="rounded-lg px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={onCreate}
-                  disabled={loading}
-                  className="rounded-lg px-3 py-2 text-sm bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-60"
-                >
-                  {loading ? 'Creating…' : 'Create'}
-                </button>
-              </div>
+              <button
+                onClick={handleCreate}
+                className="px-4 py-2 rounded-xl bg-orange-600 text-white disabled:opacity-60"
+                disabled={loading}
+              >
+                {loading ? 'Creating…' : 'Create'}
+              </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
