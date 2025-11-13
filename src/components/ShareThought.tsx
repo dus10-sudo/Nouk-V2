@@ -1,8 +1,6 @@
-// src/components/ShareThought.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 type Room = { slug: string; name: string; description?: string };
@@ -22,61 +20,57 @@ export default function ShareThought() {
   const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
-  const [mounted, setMounted] = useState(false);
 
-  // Ensure portals work only on client
-  useEffect(() => setMounted(true), []);
-
-  // Lock scroll when open
+  // Close on ESC
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [open]);
-
-  const close = () => setOpen(false);
 
   return (
     <>
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="nouk-cta fixed left-1/2 -translate-x-1/2 bottom-[max(16px,env(safe-area-inset-bottom))] z-[40] w-[92%] max-w-[720px] px-6 py-4 text-[18px] font-medium rounded-2xl shadow-[0_2px_0_rgba(0,0,0,0.05)]"
-        >
-          Share a Thought
-        </button>
-      )}
+      {/* Docked CTA */}
+      <button
+        onClick={() => setOpen(true)}
+        className="nouk-cta w-full max-w-[680px] px-6 py-4 text-[18px] font-medium shadow-[0_2px_0_rgba(0,0,0,0.05)]"
+      >
+        Share a Thought
+      </button>
 
-      {mounted && open && createPortal(
+      {/* Modal Overlay */}
+      {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
-          role="dialog"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(0,0,0,0.6)] backdrop-blur-[2px] p-4"
+          onClick={() => setOpen(false)}
           aria-modal="true"
-          onClick={close}
+          role="dialog"
         >
           <div
-            className="w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-5 shadow-soft"
             onClick={(e) => e.stopPropagation()}
+            className="animate-[fadeInUp_0.25s_ease-out] w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[var(--ring)] bg-[var(--paper)] p-5 shadow-soft"
           >
             <h2 className="mb-1 text-[22px] font-serif">Start a New Nouk</h2>
             <p className="mb-4 text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
 
-            <label className="mb-2 block text-[14px] text-[var(--muted)]">
+            {/* Step 1: pick room */}
+            <label className="mb-2 block text-[14px] text-[var(--ink)]">
               1) Where do you want to post?
             </label>
-            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-2">
               {ROOM_PRESETS.map((r) => {
-                const selected = room?.slug === r.slug;
+                const active = room?.slug === r.slug;
                 return (
                   <button
                     key={r.slug}
                     onClick={() => setRoom(r)}
-                    className={`rounded-xl border px-3 py-2 text-left transition
-                      ${selected
-                        ? 'border-[var(--select)] bg-[var(--select-bg)]'
-                        : 'border-[var(--ring)] bg-[var(--card)] hover:bg-white/50'
-                      }`}
+                    className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                      active
+                        ? 'border-[var(--accent)] bg-[var(--card)]'
+                        : 'border-[var(--ring)] bg-[var(--card)]'
+                    }`}
+                    aria-pressed={active}
                   >
                     <div className="font-medium">{r.name}</div>
                     <div className="text-[12px] text-[var(--muted)]">{r.description}</div>
@@ -85,26 +79,27 @@ export default function ShareThought() {
               })}
             </div>
 
-            <label className="mb-2 block text-[14px] text-[var(--muted)]">
+            {/* Step 2: title/link */}
+            <label className="mb-2 block text-[14px] text-[var(--ink)]">
               2) What’s the thread about? (optional link/topic)
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Say something small to start…"
-              className="mb-2 w-full rounded-xl border border-[var(--ring)] bg-white/70 px-3 py-2 outline-none"
+              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none"
             />
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="Optional link (YouTube, Spotify, article…)"
-              className="mb-4 w-full rounded-xl border border-[var(--ring)] bg-white/70 px-3 py-2 outline-none"
+              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none"
             />
 
             <div className="flex items-center justify-end gap-2">
               <button
-                onClick={close}
-                className="rounded-xl border border-[var(--ring)] px-4 py-2"
+                onClick={() => setOpen(false)}
+                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2"
               >
                 Cancel
               </button>
@@ -114,7 +109,7 @@ export default function ShareThought() {
                     ? `/room/${room.slug}?title=${encodeURIComponent(title)}&link=${encodeURIComponent(link)}`
                     : '/';
                   router.push(dest);
-                  close();
+                  setOpen(false);
                 }}
                 disabled={!room}
                 className="rounded-xl bg-[var(--accent)] px-4 py-2 text-white disabled:opacity-60"
@@ -123,8 +118,7 @@ export default function ShareThought() {
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );
