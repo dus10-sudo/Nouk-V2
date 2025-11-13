@@ -57,10 +57,7 @@ export default function Page() {
         />
       </section>
 
-      {/* Docked CTA */}
-      <div className="fixed inset-x-0 bottom-0 flex justify-center px-4 pb-[10px]">
-        <ShareThoughtButton />
-      </div>
-    </main>
-  );
-}
+      {/* Docked CTA (always visible) */}
+<div className="fixed left-0 right-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,12px)] bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/95 to-transparent backdrop-blur-sm">
+  <ShareThoughtButton />
+</div>
