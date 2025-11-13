@@ -100,3 +100,19 @@ export async function listReplies(threadId: string): Promise<Reply[]> {
   if (error) throw error;
   return data ?? [];
 }
+// --- Fetch replies for a thread ---
+export async function getRepliesForThread(threadId: string) {
+  const { data, error } = await sb
+    .from("replies")
+    .select(`
+      id,
+      body,
+      created_at,
+      user_token
+    `)
+    .eq("thread_id", threadId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
