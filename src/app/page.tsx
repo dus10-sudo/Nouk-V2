@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import React from 'react';
 
-/* --------- Mono inline icons (don’t change) --------- */
 const glyph = (d: string) => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden>
     <path fill="currentColor" d={d} />
   </svg>
 );
@@ -19,7 +18,13 @@ const Icons = {
   desk: glyph('M4 10h16v2H4zm3 3h2v5H7zm8 0h2v5h-2zM6 6h12v2H6z'),
 };
 
-/* --------- Rooms (order/labels like mock) --------- */
+const PAPER = '#F4EFE6';
+const CARD  = '#FBF6EE';
+const EDGE  = '#E9E1D6';
+const CHIP  = '#E7DFD2'; // slightly darker than before
+const TAUPE = '#6C645B';
+const CLAY  = '#C97A57';
+
 const ROOMS = [
   { slug: 'library',    name: 'Library',    desc: 'Books, projects, ideas',       icon: Icons.library },
   { slug: 'kitchen',    name: 'Kitchen',    desc: 'Recipes, cooking, food talk',  icon: Icons.kitchen },
@@ -29,48 +34,48 @@ const ROOMS = [
   { slug: 'study',      name: 'Study',      desc: 'Focus, learning, planning',    icon: Icons.desk },
 ] as const;
 
-/* --------- Color tokens tuned to the mock --------- */
-/* (warmer parchment, lighter cards, softer chip, taupe icons, clay CTA) */
-const PAPER = '#F4EFE6';
-const CARD  = '#FBF6EE';
-const EDGE  = '#E9E1D6';
-const CHIP  = '#EDE5D9';
-const TAUPE = '#6C645B';
-const CLAY  = '#C97A57';
-
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: PAPER, color: '#1f2937' }}>
-      {/* Header */}
-      <header className="pt-9 pb-1 text-center">
-        <h1 className="text-[40px] leading-none font-serif tracking-tight text-stone-800">Nouk</h1>
+      {/* Title: a touch larger + a hair more top padding */}
+      <header className="pt-10 pb-1 text-center">
+        <h1 className="text-[44px] leading-none font-serif tracking-tight text-stone-800">Nouk</h1>
       </header>
 
-      {/* Rooms */}
       <section className="flex-1 px-4 pb-4">
-        {/* tighter vertical rhythm: space-y-3, not 4 */}
-        <div className="mx-auto w-full max-w-md space-y-3">
+        {/* Narrower max width + tighter stack (≈10px) */}
+        <div className="mx-auto w-full max-w-[360px] space-y-2.5">
           {ROOMS.map((r) => (
             <Link
               key={r.slug}
               href={`/room/${r.slug}`}
-              /* slightly smaller radius, lighter shadow */
-              className="group block rounded-[18px] border shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-shadow"
-              style={{ backgroundColor: CARD, borderColor: EDGE }}
+              className="group block rounded-[16px] border transition-shadow"
+              style={{
+                backgroundColor: CARD,
+                borderColor: EDGE,
+                boxShadow:
+                  '0 1px 0 rgba(0,0,0,0.035), inset 0 1px 0 rgba(255,255,255,0.35)',
+              }}
             >
-              {/* tighter padding: py-3.5 not py-4; smaller chip 36px, softer radius */}
-              <div className="flex items-center gap-3 px-4 py-3.5">
+              {/* Slightly tighter vertical padding */}
+              <div className="flex items-center gap-3 px-4 py-[13px]">
+                {/* Smaller, darker chip */}
                 <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  className="flex h-[34px] w-[34px] items-center justify-center rounded-[12px]"
                   style={{ backgroundColor: CHIP, color: TAUPE }}
                   aria-hidden
                 >
                   {r.icon}
                 </div>
+
                 <div className="min-w-0">
-                  <div className="font-serif text-[22px] leading-6 text-stone-900">{r.name}</div>
-                  <div className="text-[13.5px] text-stone-500">{r.desc}</div>
+                  <div className="font-serif text-[21px] leading-[1.15] text-stone-900">
+                    {r.name}
+                  </div>
+                  <div className="text-[14px] text-stone-500">{r.desc}</div>
                 </div>
+
+                {/* Softer chevron */}
                 <div className="ml-auto text-stone-300 group-hover:text-stone-400 select-none">›</div>
               </div>
             </Link>
@@ -78,15 +83,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Bottom CTA (height/rounded matches mock more closely) */}
-      <footer
-        className="sticky bottom-0 border-t"
-        style={{ backgroundColor: PAPER, borderColor: EDGE }}
-      >
-        <div className="mx-auto w-full max-w-md px-4 py-4">
+      {/* CTA: slightly less round/shorter */}
+      <footer className="sticky bottom-0 border-t" style={{ backgroundColor: PAPER, borderColor: EDGE }}>
+        <div className="mx-auto w-full max-w-[360px] px-4 py-4">
           <Link
             href="/compose"
-            className="block w-full text-center font-medium text-white rounded-[20px] py-3 shadow-[inset_0_2px_0_rgba(255,255,255,0.35)] hover:brightness-95 transition"
+            className="block w-full text-center font-medium text-white rounded-[18px] py-[11px] shadow-[inset_0_2px_0_rgba(255,255,255,0.35)] hover:brightness-95 transition"
             style={{ backgroundColor: CLAY }}
           >
             Share a Thought
