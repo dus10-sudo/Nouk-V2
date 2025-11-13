@@ -262,5 +262,21 @@ export function IconStudy(props: IconProps) {
         strokeLinecap="round"
       />
     </svg>
+    // Sprout logo
+export function IconSprout(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      {...props}
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+        <path d="M12 20v-7" />
+        <path d="M12 13c0-3.5-2.2-6-5.5-6.5C5 9 6.5 12 9.5 13.2c.8.3 1.7.5 2.5.5z" />
+        <path d="M12 13c0-3.5 2.2-6 5.5-6.5C19 9 17.5 12 14.5 13.2c-.8.3-1.7.5-2.5.5z" />
+      </g>
+    </svg>
+  );
+}
   );
 }
