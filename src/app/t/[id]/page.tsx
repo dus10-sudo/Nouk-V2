@@ -1,71 +1,62 @@
 // src/app/t/[id]/page.tsx
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import {
-  getThreadWithRoom,
-  listReplies,
-  addReply,
-  type ThreadWithRoom,
-  type Reply,
-} from '@/lib/supabase';
+import { addReply } from '@/lib/actions';
+import { getThreadWithRoom, listReplies } from '@/lib/queries';
 import Composer from '@/components/Composer';
 
-type Params = { id: string };
+type Props = { params: { id: string } };
 
-export default async function ThreadPage({ params }: { params: Params }) {
-  const { id } = params;
+export default async function ThreadPage({ params: { id } }: Props) {
+  const thread = await getThreadWithRoom(id);
+  if (!thread) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <p className="text-stone-600 dark:text-stone-400">Thread not found.</p>
+      </main>
+    );
+  }
 
-  const thread: ThreadWithRoom | null = await getThreadWithRoom(id);
-  if (!thread) return notFound();
-
-  const replies: Reply[] = await listReplies(id);
-
-  const roomHref = thread.room?.slug ? `/room/${thread.room.slug}` : '/';
-  const roomLabel = thread.room?.title ?? thread.room?.slug ?? 'Room';
+  const replies = await listReplies(id);
+  const roomHref = thread.room.slug ? ({ pathname: `/room/${thread.room.slug}` } as const) : ({ pathname: '/' } as const);
+  const roomLabel = thread.room.name || thread.room.slug || 'Room';
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
-      <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-        <Link href="/" className="hover:underline">
-          Rooms
-        </Link>
-        {thread.room?.slug ? (
+      {/* Breadcrumb */}
+      <div className="text-sm text-stone-600 dark:text-stone-400">
+        <Link href="/" className="hover:underline">Rooms</Link>
+        {thread.room.slug ? (
           <>
-            <span aria-hidden>›</span>
-            <Link href={roomHref} className="hover:underline">
-              {roomLabel}
-            </Link>
+            <span aria-hidden> › </span>
+            <Link href={roomHref} className="hover:underline">{roomLabel}</Link>
           </>
         ) : null}
-        <span aria-hidden>›</span>
+        <span aria-hidden> › </span>
         <span className="text-foreground">{thread.title}</span>
       </div>
 
-      <h1 className="text-2xl font-semibold">{thread.title}</h1>
-      {thread.link_url ? (
-        <a
-          href={thread.link_url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm text-blue-600 hover:underline"
-        >
-          {thread.link_url}
-        </a>
-      ) : null}
+      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100">{thread.title}</h1>
 
-      <section aria-label="Replies" className="space-y-3">
+      <section className="space-y-3">
         {replies.map((r) => (
-          <div key={r.id} className="rounded-xl border border-stone-200 dark:border-stone-800 p-3">
-            {r.body}
-          </div>
+          <article key={r.id} className="rounded-xl border border-stone-200 dark:border-stone-700 p-4">
+            <div className="text-stone-900 dark:text-stone-100 whitespace-pre-wrap">{r.body}</div>
+            <div className="mt-2 text-xs text-stone-500">
+              {new Date(r.created_at).toLocaleString()}
+            </div>
+          </article>
         ))}
         {replies.length === 0 && (
-          <div className="text-stone-600 dark:text-stone-400">Be the first to reply.</div>
+          <p className="text-stone-600 dark:text-stone-400">Be the first to reply.</p>
         )}
       </section>
 
-      {/* Composer expects threadId */}
-      <Composer threadId={thread.id} onSend={addReply} />
+      <Composer
+        action={async (text: string) => {
+          'use server';
+          await addReply(id, text);
+        }}
+      />
     </main>
   );
 }
