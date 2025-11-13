@@ -1,19 +1,18 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { DM_Serif_Display, Inter } from 'next/font/google';
+import "./globals.css";
+import { Inter, Playfair_Display } from "next/font/google";
 
-const serif = DM_Serif_Display({ subsets: ['latin'], weight: '400', variable: '--font-serif' });
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
-export const metadata: Metadata = {
-  title: 'Nouk',
-  description: 'Cozy, low-stress conversations.',
+export const metadata = {
+  title: "Nouk",
+  description: "Cozy, low-stress conversations.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${inter.variable}`}>
-      <body className="min-h-screen bg-bg text-ink">
+    <html lang="en">
+      <body className={`${inter.variable} ${playfair.variable} font-sans bg-nouk-bg text-nouk-ink`}>
         {children}
       </body>
     </html>
