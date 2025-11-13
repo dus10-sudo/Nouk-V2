@@ -1,51 +1,48 @@
+// src/components/Composer.tsx
 'use client';
 
 import { useState } from 'react';
-import { addReply } from '@/server/actions';
 
-type Props = { threadId: string };
+type Props = {
+  threadId: string;
+  // onSend(body) -> Promise<void>
+  onSend: (threadId: string, body: string) => Promise<void>;
+};
 
-export default function Composer({ threadId }: Props) {
+export default function Composer({ threadId, onSend }: Props) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
-  async function onSend() {
+  async function submit() {
     const body = text.trim();
     if (!body) return;
     setBusy(true);
-    setErr(null);
     try {
-      await addReply(threadId, body);
+      await onSend(threadId, body);
       setText('');
-    } catch (e: any) {
-      setErr(e?.message ?? 'Failed to post.');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to send reply.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-3">
-      <textarea
+    <div className="flex gap-2">
+      <input
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Add a cozy reply…"
-        className="w-full resize-none rounded-xl border border-zinc-300 dark:border-zinc-700
-                   px-3 py-2 outline-none dark:bg-zinc-800 dark:text-white"
-        rows={3}
-        disabled={busy}
+        placeholder="Write a cozy reply…"
+        className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2"
       />
-      {err && <p className="text-sm text-red-600 mt-2">{err}</p>}
-      <div className="mt-2 flex justify-end">
-        <button
-          onClick={onSend}
-          disabled={busy || !text.trim()}
-          className="px-4 py-2 rounded-xl bg-orange-600 text-white disabled:opacity-60"
-        >
-          {busy ? 'Sending…' : 'Send'}
-        </button>
-      </div>
+      <button
+        onClick={submit}
+        disabled={busy}
+        className="rounded-lg bg-stone-900 text-white px-3 py-2 text-sm disabled:opacity-60 dark:bg-stone-100 dark:text-stone-900"
+      >
+        Send
+      </button>
     </div>
   );
 }
