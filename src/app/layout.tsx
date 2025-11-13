@@ -1,1 +1,18 @@
-import './globals.css';import type { Metadata } from 'next';import Link from 'next/link';import Image from 'next/image';export const metadata: Metadata={title:'Nouk',description:'Cozy, low-stress conversations. Threads fade after quiet hours.'};export default function RootLayout({children}:{children:React.ReactNode}){return(<html lang='en' suppressHydrationWarning><body className='min-h-dvh antialiased'><header className='sticky top-0 z-10 backdrop-blur border-b border-black/5 bg-[var(--bg)]/75'><div className='mx-auto max-w-5xl px-4 py-3 flex items-center gap-3'><Link href='/' className='flex items-center gap-2 font-semibold'><Image src='/logo.svg' alt='Nouk' width={24} height={24} className='opacity-90'/><span>Nouk</span></Link><div className='ml-auto text-sm opacity-70'>Ephemeral rooms. Quiet voices.</div></div></header><main className='mx-auto max-w-5xl px-4 py-6'>{children}</main></body></html>);}
+// src/app/layout.tsx
+import "./globals.css";
+import type { ReactNode } from "react";
+
+export const metadata = {
+  title: "Nouk",
+  description: "Ephemeral rooms. Quiet voices.",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}
