@@ -1,60 +1,65 @@
-import { NextResponse } from 'next/server';
+// src/app/api/threads/route.ts
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { getClient } from '@/lib/supabase';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-function getClient(server = false) {
-  return createClient(SUPABASE_URL, server && SERVICE ? SERVICE : ANON, {
-    auth: { persistSession: false },
-  });
-}
+const ONE_YEAR = 60 * 60 * 24 * 365;
 
 export async function POST(req: Request) {
-  try {
-    const { roomSlug, title, link_url } = await req.json();
-    if (!roomSlug || !title) {
-      return NextResponse.json({ error: 'roomSlug and title are required' }, { status: 400 });
-    }
+  const { roomSlug, title, link } = (await req.json().catch(() => ({}))) as {
+    roomSlug?: string;
+    title?: string;
+    link?: string | null;
+  };
 
-    // ensure anonymous token cookie for RLS policies
-    const jar = cookies();
-    let token = jar.get('nouk_token')?.value;
-    if (!token) {
-      token = randomUUID();
-      jar.set('nouk_token', token, { httpOnly: true, path: '/', sameSite: 'Lax', maxAge: 60 * 60 * 24 * 365 });
-    }
-
-    const supabase = getClient(Boolean(SERVICE));
-
-    // look up room id by slug
-    const { data: room, error: roomErr } = await supabase
-      .from('rooms')
-      .select('id, slug')
-      .eq('slug', roomSlug)
-      .maybeSingle();
-
-    if (roomErr) throw roomErr;
-    if (!room) return NextResponse.json({ error: 'Room not found' }, { status: 404 });
-
-    const { data, error } = await supabase
-      .from('threads')
-      .insert({
-        room_id: room.id,
-        title,
-        link_url: link_url ?? null,
-        user_token: token,
-      })
-      .select('id')
-      .maybeSingle();
-
-    if (error) throw error;
-
-    return NextResponse.json({ id: data?.id, roomSlug });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 });
+  if (!roomSlug) {
+    return NextResponse.json({ error: 'roomSlug required' }, { status: 400 });
   }
+
+  // Ensure we have a user token cookie
+  const jar = cookies();
+  let token = jar.get('nouk_token')?.value;
+  if (!token) {
+    token = randomUUID();
+    jar.set({
+      name: 'nouk_token',
+      value: token,
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax', // << was 'Lax' (wrong type)
+      maxAge: ONE_YEAR,
+    });
+  }
+
+  const supabase = getClient(true);
+
+  // Find the room ID by slug
+  const { data: room, error: roomErr } = await supabase
+    .from('rooms')
+    .select('id, slug')
+    .eq('slug', roomSlug)
+    .maybeSingle();
+
+  if (roomErr || !room) {
+    return NextResponse.json({ error: 'Room not found' }, { status: 404 });
+  }
+
+  // Create the thread
+  const { data, error } = await supabase
+    .from('threads')
+    .insert({
+      room_id: room.id,
+      title: title ?? '',
+      link_url: link ?? null,
+      user_token: token,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ id: data?.id }, { status: 201 });
 }
