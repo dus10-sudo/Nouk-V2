@@ -5,7 +5,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const sb = createClient(url, anon);
 
-// ---- Types (match the SQL you ran) ----
+// ---- Types ----
 export type Room = {
   id: string;
   slug: string;
@@ -19,9 +19,8 @@ export type Thread = {
   room_id: string;
   title: string;
   link_url: string | null;
-  expires_at: string; // TIMESTAMP
+  expires_at: string;
   created_at: string;
-  room: Room;
   message_count?: number;
   is_hot?: boolean;
 };
@@ -33,7 +32,7 @@ export type Message = {
   created_at: string;
 };
 
-// ---- Queries (server-safe; anon key) ----
+// ---- Queries ----
 export async function getRooms(): Promise<Room[]> {
   const { data, error } = await sb
     .from("rooms")
@@ -65,9 +64,4 @@ export async function getThreadsForRoom(slug: string): Promise<Thread[]> {
   const { data, error } = await sb
     .from("threads")
     .select(
-      "id, room_id, title, link_url, expires_at, created_at, message_count, is_hot"
-    )
-    .eq("room_id", room.id)
-    .gt("expires_at", new Date().toISOString()) // not expired
-    .order("is_hot", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
+      "id, room_id
