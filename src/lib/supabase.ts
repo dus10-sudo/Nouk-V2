@@ -1,31 +1,25 @@
 // src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
+import sb from './supabaseClient';
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-export const sb = createClient(URL, KEY);
-
-// ---------- Types (soft/optional to tolerate missing columns) ----------
+// ---- Types that align with your SQL schema ----
 export type Room = {
   id: string;
-  slug: string;
   name: string;
-  description?: string | null;
-  is_special?: boolean | null;
-  active_count?: number | null;
+  slug: string;
+  description: string | null;
+  created_at: string;
 };
 
 export type Thread = {
   id: string;
   room_id: string;
-  title?: string | null;
-  link_url?: string | null;
+  title: string;
+  link_url: string | null;
   created_at: string;
-  expires_at?: string | null;
-  is_hot?: boolean | null;
-  // Optional joined fields when we SELECT with relations
-  room_slug?: string | null;
-  room_name?: string | null;
+  expires_at: string;
+  // included from join for breadcrumbs
+  room_slug?: string;
+  room_name?: string;
 };
 
 export type Message = {
@@ -35,129 +29,85 @@ export type Message = {
   created_at: string;
 };
 
-// ---------- Rooms ----------
+// ---- Rooms ----
 export async function listRooms(): Promise<Room[]> {
   const { data, error } = await sb
     .from('rooms')
-    .select('id, slug, name, description, is_special, active_count')
-    .order('is_special', { ascending: false })
+    .select('id, name, slug, description, created_at')
     .order('name', { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as Room[];
+  if (error) throw new Error(`listRooms: ${error.message}`);
+  return data ?? [];
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | null> {
   const { data, error } = await sb
     .from('rooms')
-    .select('id, slug, name, description, is_special, active_count')
+    .select('id, name, slug, description, created_at')
     .eq('slug', slug)
-    .maybeSingle();
+    .single();
 
-  if (error) throw error;
-  return (data as Room) ?? null;
+  if (error && error.code !== 'PGRST116') throw new Error(`getRoomBySlug: ${error.message}`);
+  return data ?? null;
 }
 
-// ---------- Threads ----------
+// ---- Threads ----
 export async function listThreadsForRoom(roomSlug: string): Promise<Thread[]> {
-  // Resolve room id from slug
+  // find room.id first
   const room = await getRoomBySlug(roomSlug);
   if (!room) return [];
 
   const { data, error } = await sb
     .from('threads')
-    .select(
-      [
-        'id',
-        'room_id',
-        'title',
-        'link_url',
-        'created_at',
-        'expires_at',
-        'is_hot',
-      ].join(', ')
-    )
+    .select(`
+      id,
+      room_id,
+      title,
+      link_url,
+      created_at,
+      expires_at
+    `)
     .eq('room_id', room.id)
-    .gt('expires_at', new Date().toISOString()) // show only non-expired
-    .order('is_hot', { ascending: false, nullsFirst: false })
+    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) throw new Error(`listThreadsForRoom: ${error.message}`);
 
-  // Attach room metadata so pages can show breadcrumbs without re-query
-  return (data ?? []).map(t => ({
+  // decorate with room fields for UI breadcrumbs
+  const withRoom = (data ?? []).map(t => ({
     ...t,
     room_slug: room.slug,
     room_name: room.name,
   })) as Thread[];
+
+  return withRoom;
 }
 
 export async function getThread(id: string): Promise<Thread | null> {
-  // Try to fetch thread + its room (if FK is set up)
-  const { data, error } = await sb
+  // pull thread + also grab room fields in a second call
+  const { data: t, error } = await sb
     .from('threads')
-    .select(
-      [
-        'id',
-        'room_id',
-        'title',
-        'link_url',
-        'created_at',
-        'expires_at',
-        'is_hot',
-        'rooms!inner(id, slug, name)' // will be ignored if no FK; that’s fine
-      ].join(', ')
-    )
+    .select('id, room_id, title, link_url, created_at, expires_at')
     .eq('id', id)
-    .maybeSingle();
+    .single();
+  if (error && error.code !== 'PGRST116') throw new Error(`getThread: ${error.message}`);
+  if (!t) return null;
 
-  if (error) throw error;
-  if (!data) return null;
-
-  // Normalize optional room fields
-  const anyData = data as any;
-  const room = anyData.rooms?.[0] ?? anyData.rooms ?? null;
+  const { data: r, error: rErr } = await sb
+    .from('rooms')
+    .select('slug, name')
+    .eq('id', t.room_id)
+    .single();
+  if (rErr && rErr.code !== 'PGRST116') throw new Error(`getThread(room): ${rErr.message}`);
 
   return {
-    id: anyData.id,
-    room_id: anyData.room_id,
-    title: anyData.title ?? null,
-    link_url: anyData.link_url ?? null,
-    created_at: anyData.created_at,
-    expires_at: anyData.expires_at ?? null,
-    is_hot: anyData.is_hot ?? null,
-    room_slug: room?.slug ?? null,
-    room_name: room?.name ?? null,
+    ...t,
+    room_slug: r?.slug,
+    room_name: r?.name,
   } as Thread;
 }
 
-// Create a new thread in a room by slug
-export async function createThread(
-  roomSlug: string,
-  opts: { title: string; link_url?: string | null }
-): Promise<string> {
-  const room = await getRoomBySlug(roomSlug);
-  if (!room) throw new Error('Room not found');
-
-  // default expires_at = now + 24h
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-  const { data, error } = await sb
-    .from('threads')
-    .insert({
-      room_id: room.id,
-      title: opts.title,
-      link_url: opts.link_url ?? null,
-      expires_at: expires,
-    })
-    .select('id')
-    .single();
-
-  if (error) throw error;
-  return data!.id as string;
-}
-
-// ---------- Messages ----------
+// ---- Messages ----
 export async function listMessages(threadId: string): Promise<Message[]> {
   const { data, error } = await sb
     .from('messages')
@@ -165,18 +115,42 @@ export async function listMessages(threadId: string): Promise<Message[]> {
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []) as Message[];
+  if (error) throw new Error(`listMessages: ${error.message}`);
+  return data ?? [];
 }
 
-export async function addMessage(threadId: string, body: string): Promise<void> {
-  const trimmed = (body ?? '').trim();
-  if (!trimmed) return;
+export async function addMessage(threadId: string, body: string): Promise<string> {
+  const { data, error } = await sb
+    .from('messages')
+    .insert({ thread_id: threadId, body })
+    .select('id')
+    .single();
 
-  const { error } = await sb.from('messages').insert({
-    thread_id: threadId,
-    body: trimmed,
-  });
+  if (error) throw new Error(`addMessage: ${error.message}`);
+  return data!.id as string;
+}
 
-  if (error) throw error;
+// ---- Create thread (3rd arg is OPTIONAL link) ----
+export async function createThread(
+  roomSlug: string,
+  title: string,
+  link_url?: string | null
+): Promise<string> {
+  const room = await getRoomBySlug(roomSlug);
+  if (!room) throw new Error(`Room not found for slug: ${roomSlug}`);
+
+  const { data, error } = await sb
+    .from('threads')
+    .insert({
+      room_id: room.id,
+      title,
+      link_url: link_url ?? null,
+      // if you didn't set DB default for expires_at:
+      // expires_at: new Date(Date.now() + 24*60*60*1000).toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) throw new Error(`createThread: ${error.message}`);
+  return data!.id as string;
 }
