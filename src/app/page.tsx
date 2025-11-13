@@ -1,7 +1,6 @@
-// src/app/page.tsx
 "use client";
 
-import Link from "next/link";
+import RoomCard from "@/components/RoomCard";
 import {
   IconLibrary,
   IconKitchen,
@@ -13,111 +12,80 @@ import {
 } from "@/components/Icons";
 
 export default function HomePage() {
+  const rooms = [
+    {
+      href: "/room/library",
+      icon: "library",
+      title: "Library",
+      subtitle: "Books, projects, ideas",
+    },
+    {
+      href: "/room/kitchen",
+      icon: "kitchen",
+      title: "Kitchen",
+      subtitle: "Recipes, cooking, food talk",
+    },
+    {
+      href: "/room/theater",
+      icon: "theater",
+      title: "Theater",
+      subtitle: "Movies & TV",
+    },
+    {
+      href: "/room/game-room",
+      icon: "game",
+      title: "Game Room",
+      subtitle: "Games, music & hobbies",
+    },
+    {
+      href: "/room/garage",
+      icon: "garage",
+      title: "Garage",
+      subtitle: "DIY, tools, builds",
+    },
+    {
+      href: "/room/study",
+      icon: "study",
+      title: "Study",
+      subtitle: "Focus, learning, planning",
+    },
+  ];
+
   return (
-    <main className="mx-auto max-w-[720px] px-4 pb-24">
+    <main className="relative min-h-screen bg-[var(--bg)] text-[var(--text)] px-5 pb-28">
 
-      {/* -----------------------------
-           Header with sprout + logo
-         ----------------------------- */}
-      <header className="pt-12 pb-6 text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--chip)] shadow-[var(--soft)]">
-          <IconSprout className="h-10 w-10 text-[var(--accent)]" />
-        </div>
+      {/* Soft Top Glow */}
+      <div className="absolute left-0 right-0 top-0 h-48 bg-gradient-to-b from-[rgba(0,0,0,0.06)] to-transparent pointer-events-none"></div>
 
-        <h1 className="font-serif text-[48px] leading-[1.05] tracking-[-0.03em]">
-          Nouk
-        </h1>
-      </header>
-
-      {/* -----------------------------
-           Room List
-         ----------------------------- */}
-      <div className="space-y-4 mt-4">
-        <RoomCard
-          href="/room/library"
-          Icon={IconLibrary}
-          title="Library"
-          subtitle="Books, projects, ideas"
-        />
-        <RoomCard
-          href="/room/kitchen"
-          Icon={IconKitchen}
-          title="Kitchen"
-          subtitle="Recipes, cooking, food talk"
-        />
-        <RoomCard
-          href="/room/theater"
-          Icon={IconTheater}
-          title="Theater"
-          subtitle="Movies & TV"
-        />
-        <RoomCard
-          href="/room/game-room"
-          Icon={IconGame}
-          title="Game Room"
-          subtitle="Games, music & hobbies"
-        />
-        <RoomCard
-          href="/room/garage"
-          Icon={IconGarage}
-          title="Garage"
-          subtitle="DIY, tools, builds"
-        />
-        <RoomCard
-          href="/room/study"
-          Icon={IconStudy}
-          title="Study"
-          subtitle="Focus, learning, planning"
-        />
+      {/* Sprout Icon */}
+      <div className="w-full flex justify-center mt-6 mb-2">
+        <IconSprout className="h-10 w-10 text-[var(--accent)] stroke-[2.2]" />
       </div>
 
-      {/* -----------------------------
-           Share a Thought
-         ----------------------------- */}
-      <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4">
-        <Link
-          href="/share"
-          className="w-full max-w-[700px] rounded-full bg-[var(--accent)] py-4 text-center font-medium text-white shadow-[var(--shadow)]"
-        >
+      {/* Nouk Title */}
+      <h1 className="text-center text-5xl font-semibold tracking-wide mb-8 text-[var(--title)]">
+        Nouk
+      </h1>
+
+      {/* Rooms List */}
+      <div className="flex flex-col gap-6">
+        {rooms.map((room) => (
+          <RoomCard
+            key={room.href}
+            href={room.href}
+            icon={room.icon}       // STRING, not a function → FIXES build errors
+            title={room.title}
+            subtitle={room.subtitle}
+          />
+        ))}
+      </div>
+
+      {/* Bottom Button */}
+      <div className="fixed bottom-4 left-4 right-4">
+        <button className="w-full rounded-full bg-[var(--accent)] py-4 text-white text-lg font-medium shadow-md active:scale-[0.98] transition">
           Share a Thought
-        </Link>
+        </button>
       </div>
     </main>
-  );
-}
-
-/* ----------------------------------------------
-   Room Card Component (inline for easy copy/paste)
-   ---------------------------------------------- */
-function RoomCard({
-  href,
-  title,
-  subtitle,
-  Icon,
-}: {
-  href: string;
-  title: string;
-  subtitle: string;
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center justify-between rounded-3xl bg-[var(--card)]
-                 border border-[var(--ring)] shadow-[var(--soft)] px-5 py-4"
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--chip)]">
-          <Icon className="h-7 w-7 text-[var(--icon)]" />
-        </div>
-
-        <div>
-          <div className="font-medium text-[18px]">{title}</div>
-          <div className="text-[14px] text-[var(--muted)]">{subtitle}</div>
-        </div>
-      </div>
-
-      <span className="text-[var(--muted)] text-xl">›</span>
-    </Link>
   );
 }
