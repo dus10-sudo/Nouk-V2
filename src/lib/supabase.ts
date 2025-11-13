@@ -10,9 +10,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
 });
 
-/** Optional helper so API routes or other code can "get a client" without changing behavior. */
+/** Optional helper so API routes or other code can "get a client". */
 export function getClient(_service?: boolean) {
-  // We ignore `_service` and always return the anon client for now.
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false },
   });
@@ -24,7 +23,7 @@ export function getClient(_service?: boolean) {
 export type Room = {
   id: string;
   slug: string;
-  title: string;                // <- comes from DB `name` via SQL alias
+  title: string;                // <- derived from DB `name`
   description?: string | null;
   is_active: boolean;
   is_ephemeral?: boolean | null;
@@ -56,7 +55,7 @@ export type Reply = {
 export type ThreadWithRoom = Thread & {
   room: {
     slug: string;
-    title: string; // <- room.name aliased as title
+    title: string; // <- derived from rooms.name
   };
 };
 
@@ -70,48 +69,51 @@ function token(): string {
 
 /* ---------- Rooms ---------- */
 export async function listRooms(): Promise<Room[]> {
-  // Alias `name` -> `title` so the rest of the app can keep using `title`
   const { data, error } = await supabase
     .from('rooms')
-    .select(
-      `
-      id,
-      slug,
-      name:title,
-      description,
-      is_active,
-      is_ephemeral,
-      icon,
-      created_at
-    `
-    )
+    .select('id, slug, name, description, is_active, is_ephemeral, icon, created_at')
     .eq('is_active', true)
-    .order('name', { ascending: true }); // order by DB column
+    .order('name', { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as Room[];
+
+  // map DB shape -> app shape (name -> title)
+  const mapped = (data ?? []).map((r: any) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.name,
+    description: r.description ?? null,
+    is_active: r.is_active,
+    is_ephemeral: r.is_ephemeral ?? null,
+    icon: r.icon ?? null,
+    created_at: r.created_at,
+  })) as Room[];
+
+  return mapped;
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | null> {
   const { data, error } = await supabase
     .from('rooms')
-    .select(
-      `
-      id,
-      slug,
-      name:title,
-      description,
-      is_active,
-      is_ephemeral,
-      icon,
-      created_at
-    `
-    )
+    .select('id, slug, name, description, is_active, is_ephemeral, icon, created_at')
     .eq('slug', slug)
     .maybeSingle();
 
   if (error) throw error;
-  return (data as Room) ?? null;
+  if (!data) return null;
+
+  const r = data as any;
+  const room: Room = {
+    id: r.id,
+    slug: r.slug,
+    title: r.name,
+    description: r.description ?? null,
+    is_active: r.is_active,
+    is_ephemeral: r.is_ephemeral ?? null,
+    icon: r.icon ?? null,
+    created_at: r.created_at,
+  };
+  return room;
 }
 
 /* ---------- Threads ---------- */
@@ -128,7 +130,7 @@ export async function listThreads(roomId: string): Promise<Thread[]> {
   return (data ?? []) as Thread[];
 }
 
-/** Get a single thread + its room slug/name (aliased to title) */
+/** Get a single thread + its room slug/name (mapped to title) */
 export async function getThreadWithRoom(id: string): Promise<ThreadWithRoom | null> {
   const { data, error } = await supabase
     .from('threads')
@@ -137,7 +139,7 @@ export async function getThreadWithRoom(id: string): Promise<ThreadWithRoom | nu
       *,
       room:rooms (
         slug,
-        name:title
+        name
       )
     `
     )
@@ -147,15 +149,24 @@ export async function getThreadWithRoom(id: string): Promise<ThreadWithRoom | nu
   if (error) throw error;
   if (!data) return null;
 
-  // Shape for TS
   const t = data as any;
   const shaped: ThreadWithRoom = {
-    ...t,
+    id: t.id,
+    room_id: t.room_id,
+    title: t.title,
+    link_url: t.link_url,
+    user_token: t.user_token,
+    is_archived: t.is_archived,
+    expires_at: t.expires_at,
+    last_activity: t.last_activity,
+    created_at: t.created_at,
+    posts_count: t.posts_count,
     room: {
       slug: t.room?.slug,
-      title: t.room?.title,
+      title: t.room?.name, // map rooms.name -> title
     },
   };
+
   return shaped;
 }
 
