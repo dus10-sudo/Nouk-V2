@@ -1,1 +1,43 @@
-import Link from 'next/link';import { listRooms } from '@/lib/api';export const revalidate=0;export default async function Page(){const {data:rooms}=await listRooms();return(<div className='grid md:grid-cols-[280px,1fr] gap-6'><aside className='hidden md:block app-card p-4 h-fit'><h2 className='text-lg font-semibold mb-3'>Rooms</h2><ul className='space-y-2'>{rooms?.map(r=>(<li key={r.id}><Link className='app-card px-3 py-2 block hover:shadow-md transition-shadow' href={`/r/${r.slug}`}><div className='font-medium'>{r.title}</div><div className='text-sm opacity-70'>{r.description}</div></Link></li>))}</ul></aside><section className='space-y-4'><div className='app-card p-6'><h1 className='text-3xl md:text-4xl font-serif mb-2'>Welcome to Nouk.</h1><p className='opacity-80'>Cozy, low-stress conversations. Threads fade after quiet hours.</p></div><div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>{rooms?.map(r=>(<Link key={r.id} href={`/r/${r.slug}`} className='app-card p-4 hover:shadow-md transition-shadow'><div className='flex items-center gap-2'><span className='h-2 w-2 rounded-full bg-accent animate-pulse-dot' aria-hidden></span><div className='font-semibold'>{r.title}</div></div><div className='text-sm opacity-70 mt-1'>{r.description}</div></Link>))}</div></section></div>);}
+// src/app/page.tsx
+import Link from "next/link";
+import { getRooms } from "@/lib/supabase";
+
+export const revalidate = 0;
+
+export default async function HomePage() {
+  const rooms = await getRooms();
+
+  return (
+    <main className="mx-auto max-w-screen-lg px-4 py-8 space-y-6">
+      <section>
+        <h1 className="font-serif text-4xl tracking-tight">Welcome to Nouk.</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cozy, low-stress conversations. Threads fade after quiet hours.
+        </p>
+      </section>
+
+      <section className="rounded-3xl border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Rooms</h2>
+          <span className="rounded-full bg-muted px-2 py-1 text-xs">ephemeral</span>
+        </div>
+
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {rooms.map((r) => (
+            <li key={r.id}>
+              <Link
+                href={`/room/${encodeURIComponent(r.slug)}`}
+                className="block rounded-2xl border bg-background px-4 py-3 shadow-sm transition hover:shadow-md"
+              >
+                <div className="text-base font-medium">{r.name}</div>
+                {r.description && (
+                  <div className="text-xs text-muted-foreground">{r.description}</div>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </main>
+  );
+}
