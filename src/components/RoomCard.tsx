@@ -1,38 +1,36 @@
 import Link from "next/link";
-import { ComponentType, SVGProps } from "react";
-import { IconChevron } from "./Icons";
 
-type Props = {
+type IconType = (props: { className?: string }) => JSX.Element;
+
+type RoomCardProps = {
   href: string;
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  Icon: IconType;
   title: string;
   subtitle: string;
 };
 
-export default function RoomCard({ href, Icon, title, subtitle }: Props) {
+export default function RoomCard({
+  href,
+  Icon,
+  title,
+  subtitle,
+}: RoomCardProps) {
   return (
     <Link
       href={href}
-      className="block rounded-2xl border border-[var(--ring)] bg-[var(--card)] pl-4 pr-3 py-3 shadow-[var(--shadow)]"
+      className="block rounded-[24px] bg-[var(--card)] border border-[var(--stroke)] shadow-soft px-4 py-3"
     >
       <div className="flex items-center gap-4">
-        {/* Icon chip */}
-        <div className="grid size-14 place-items-center rounded-full border border-[var(--ring)] bg-white/80 shadow-sm">
-          <Icon className="h-6 w-6 text-[var(--ink)]" aria-hidden="true" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--badge)]">
+          <Icon className="h-6 w-6 text-[var(--ink)]" />
         </div>
 
-        {/* Text */}
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-serif text-[28px] leading-[1.05] tracking-[-0.01em]">
-            {title}
-          </div>
-          <div className="truncate text-[16px] text-[var(--muted)]">
+        <div className="flex-1">
+          <div className="room-title font-serif">{title}</div>
+          <div className="mt-0.5 text-[13px] text-[var(--muted)]">
             {subtitle}
           </div>
         </div>
-
-        {/* Chevron */}
-        <IconChevron className="h-5 w-5 text-[var(--muted)]/70" aria-hidden="true" />
       </div>
     </Link>
   );
