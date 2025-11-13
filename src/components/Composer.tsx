@@ -1,48 +1,54 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { addMessage } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { addMessage } from '@/lib/supabase';
 
-export default function Composer({ threadId }: { threadId: string }) {
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const router = useRouter();
+type Props = {
+  threadId: string;
+};
 
-  async function send() {
+export default function Composer({ threadId }: Props) {
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function handleSend() {
     const body = text.trim();
-    if (!body) return;
-    setBusy(true);
+    if (!body || sending) return;
+
+    setSending(true);
     try {
       await addMessage(threadId, body);
-      setText("");
-      router.refresh();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to send.");
+      setText('');
     } finally {
-      setBusy(false);
+      setSending(false);
+    }
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend();
     }
   }
 
   return (
-    <div className="sticky bottom-0 mt-4 rounded-2xl border bg-card p-3 shadow-sm">
+    <div className="sticky bottom-0 flex gap-2 rounded-xl border bg-background p-3">
       <textarea
+        className="min-h-[44px] flex-1 resize-none rounded-lg border px-3 py-2 text-sm outline-none"
+        placeholder="Write something kind…"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        rows={3}
-        placeholder="Write a reply…"
-        className="w-full resize-none rounded-xl border bg-background px-3 py-2 outline-none focus:ring"
+        onKeyDown={onKeyDown}
       />
-      <div className="mt-2 flex justify-end">
-        <button
-          onClick={send}
-          disabled={busy || !text.trim()}
-          className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground shadow hover:shadow-md disabled:opacity-50"
-        >
-          {busy ? "Sending…" : "Reply"}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleSend}
+        disabled={sending || !text.trim()}
+        className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        style={{ background: 'var(--accent, #CE6A34)' }} /* burnt orange */
+      >
+        {sending ? 'Sending…' : 'Send'}
+      </button>
     </div>
   );
 }
