@@ -1,5 +1,5 @@
-import RoomCard from '@/components/RoomCard';
-import ShareThoughtButton from '@/components/ShareThoughtButton';
+import RoomCard from "@/components/RoomCard";
+import ShareThoughtButton from "@/components/ShareThoughtButton";
 import {
   IconLibrary,
   IconKitchen,
@@ -7,18 +7,20 @@ import {
   IconGame,
   IconGarage,
   IconStudy,
-} from '@/components/Icons';
+} from "@/components/Icons";
 
 export default function Page() {
   return (
     <main className="mx-auto max-w-[720px] px-4 pb-28">
       {/* Title */}
       <header className="pt-6 pb-2 text-center">
-        <h1 className="font-serif text-[56px] leading-[1.02] tracking-[-0.018em]">Nouk</h1>
+        <h1 className="font-serif text-[56px] leading-[1.02] tracking-[-0.018em]">
+          Nouk
+        </h1>
       </header>
 
-      {/* Rooms */}
-      <section className="space-y-3">
+      {/* Cards */}
+      <section className="space-y-3 mb-24">
         <RoomCard
           href="/room/library"
           Icon={IconLibrary}
@@ -58,6 +60,9 @@ export default function Page() {
       </section>
 
       {/* Docked CTA (always visible) */}
-<div className="fixed left-0 right-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,12px)] bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/95 to-transparent backdrop-blur-sm">
-  <ShareThoughtButton />
-</div>
+      <div className="fixed left-0 right-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,12px)] bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/95 to-transparent backdrop-blur-sm">
+        <ShareThoughtButton />
+      </div>
+    </main>
+  );
+          }
