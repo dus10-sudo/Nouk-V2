@@ -2,124 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =======================
+/* ────────────────────────────────────────────────
    Nouk Parchment Theme
-   (single source of truth)
-   ======================= */
-:root{
-  /* surfaces & ink */
-  --paper:#EDE1CE;     /* page background (slightly darker) */
-  --card:#F6EAD6;      /* cards */
-  --ring:#E8DCC8;      /* card edge / focus ring */
-  --ink:#3E342F;       /* headings & icons */
-  --muted:#7A6E65;     /* subtitles */
-
-  /* accent */
-  --accent:#C87553;        /* CTA */
-  --accent-press:#B86748;  /* CTA pressed */
-
-  /* shadows */
+────────────────────────────────────────────────── */
+:root {
+  /* core palette */
+  --paper:#EDE1CE;          /* page background (slightly darker parchment) */
+  --card:#F6EAD6;           /* cards / surfaces */
+  --ring:#E8DCC8;           /* borders / focus rings */
+  --ink:#3E342F;            /* primary text */
+  --muted:#7A6E65;          /* subtitles / secondary text */
+  --accent:#C87553;         /* accent (Share button) */
+  --accent-press:#B86748;   /* pressed accent */
   --shadow:0 1px 0 rgba(0,0,0,.03), 0 8px 24px rgba(0,0,0,.06);
   --soft:0 4px 18px rgba(0,0,0,.08);
+
+  /* highlight accent (for selection feedback) */
+  --select:#5d7d66;
+  --select-bg:rgba(93,125,102,.18);
 }
 
-/* base layout */
+/* ────────────────────────────────────────────────
+   Base Elements
+────────────────────────────────────────────────── */
 html, body, #__next, :root { height: 100%; }
-body{
-  background:var(--paper);
-  color:var(--ink);
+
+body {
+  background: var(--paper);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* links & focus */
-a{ color:inherit; text-decoration:none; } /* kill blue flash on SSR */
-*:focus-visible{
-  outline:2px solid var(--ring);
-  outline-offset:2px;
+/* remove blue link flash */
+a { color: inherit; text-decoration: none; }
+
+/* subtle focus ring */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
-/* touch polish */
-*{ -webkit-tap-highlight-color:transparent; }
+/* mobile tap highlight off */
+* { -webkit-tap-highlight-color: transparent; }
 
-/* ===== Helpers used by cards / CTA (match mock) ===== */
-.bg-card{ background:var(--card); }
-.border-ring{ border-color:var(--ring); }
-.text-ink{ color:var(--ink); }
-.text-muted{ color:var(--muted); }
+/* ────────────────────────────────────────────────
+   Reusable Classes
+────────────────────────────────────────────────── */
+.bg-card { background: var(--card); }
+.border-ring { border-color: var(--ring); }
+.text-ink { color: var(--ink); }
+.text-muted { color: var(--muted); }
 
-.shadow-card{ box-shadow:var(--shadow); }
-.shadow-soft{ box-shadow:var(--soft); }
-
-/* Reusable card shell */
-.card{
-  @apply rounded-2xl border;
-  background:var(--card);
-  border-color:var(--ring);
-  box-shadow:var(--shadow);
+.primary {
+  background: var(--accent);
+  color: #fff;
 }
-.card-row{ @apply flex items-center gap-4; }
+.primary:active { background: var(--accent-press); }
 
-/* CTA */
-.primary{ background:var(--accent); color:#fff; }
-.primary:active{ background:var(--accent-press); }
+.shadow-card { box-shadow: var(--shadow); }
+.shadow-soft { box-shadow: var(--soft); }
 
-/* Safe-area padding for bottom-docked button */
-.safe-bottom{ padding-bottom:max(env(safe-area-inset-bottom),16px); }
+/* typography */
+h1 { letter-spacing:-.015em; }
+.room-title { font-size:26px; line-height:1.05; letter-spacing:-.01em; }
+.room-sub { color:var(--muted); }
 
-/* Typography to match the mock */
-h1{ letter-spacing:-.015em; }                /* “Nouk” wordmark */
-.room-title{ font-size:26px; line-height:1.05; letter-spacing:-.01em; }
-.room-sub{ color:var(--muted); }
-/* --- micro tune to match mock --- */
-
-/* 1) Headline scale & rhythm */
-h1 {
-  font-size: clamp(42px, 6.2vw, 56px);
-  line-height: 1.02;
-  letter-spacing: -0.018em;
-  margin-top: 28px;
-  margin-bottom: 16px;
+/* card helpers */
+.card {
+  @apply bg-card rounded-2xl shadow-card border border-[color:var(--ring)];
 }
+.card-row { @apply flex items-center gap-4; }
+.subtle { color: var(--muted); }
 
-/* 2) Icon badge size + tone */
-.icon-badge {
-  width: 60px;
-  height: 60px;
-  border-radius: 9999px;
-  display: grid;
-  place-items: center;
-  background: color-mix(in srgb, var(--card) 86%, #000 14%);
-  /* subtle rim */
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.45),
-    inset 0 -1px 0 rgba(0,0,0,.04);
+/* remove link underline fallback flash */
+a { color: inherit; text-decoration: none; }
+
+/* ────────────────────────────────────────────────
+   Modal / Sheet Animation
+────────────────────────────────────────────────── */
+@keyframes modalIn {
+  from {
+    transform: translateY(8px) scale(.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
-.icon-badge svg {
-  transform: scale(.88); /* icon 12% smaller inside larger badge */
-  opacity: .92;
+.animate-modalIn {
+  animation: modalIn .18s ease-out both;
 }
 
-/* 3) Card density & padding */
-.card { 
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-}
-.card + .card { margin-top: 12px; }       /* was ~14–16px visually */
-.card-pad { padding: 16px 18px; }         /* slight bump without adding list gap */
-
-/* 4) Chevron alignment & tone */
-.chev {
-  opacity: .45;
-  transform: translateX(2px);
+/* optional focus glow for clickable tiles */
+button:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring) inset;
 }
 
-/* 5) CTA button refinement */
+/* ────────────────────────────────────────────────
+   Utility Alignment / Overrides
+────────────────────────────────────────────────── */
 .nouk-cta {
-  border-radius: 18px;
-  box-shadow:
-    0 2px 0 rgba(0,0,0,.05),
-    0 10px 26px rgba(0,0,0,.10);
-  padding: 18px 20px;
-  margin-bottom: max(6px, env(safe-area-inset-bottom));
+  @apply rounded-2xl font-medium text-center bg-[var(--accent)] text-white;
 }
