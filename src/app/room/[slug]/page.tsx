@@ -58,7 +58,7 @@ export default function RoomPage() {
       try {
         const id = await createThread(room.slug, titleQP, linkQP || null);
         // Clean URL and go to new thread
-        router.replace(`/thread/${id}`);
+       router.replace(`/t/${id}`);
       } catch {
         // If creation fails, just remove QPs so we don't loop
         const clean = new URL(window.location.href);
