@@ -1,5 +1,4 @@
 // src/components/RoomCard.tsx
-"use client";
 
 import Link from "next/link";
 import type { ComponentType } from "react";
