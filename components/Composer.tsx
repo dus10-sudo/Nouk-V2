@@ -1,48 +1,49 @@
 // src/components/Composer.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
+import { addMessage } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-type Props = {
-  placeholder?: string;
-  onSubmit: (text: string) => Promise<void> | void;
-  buttonLabel?: string;
-};
-
-export default function Composer({ placeholder, onSubmit, buttonLabel = 'Post' }: Props) {
-  const [value, setValue] = useState('');
+export default function Composer({ threadId }: { threadId: string }) {
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const text = value.trim();
-    if (!text) return;
+  async function send() {
+    const body = text.trim();
+    if (!body) return;
     setBusy(true);
     try {
-      await onSubmit(text);
-      setValue('');
+      await addMessage(threadId, body);
+      setText("");
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to send.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <input
-        className="flex-1 rounded-xl border px-3 py-2 outline-none focus:ring"
-        placeholder={placeholder ?? 'Say something…'}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        disabled={busy}
+    <div className="sticky bottom-0 mt-4 rounded-2xl border bg-card p-3 shadow-sm">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        placeholder="Write a reply…"
+        className="w-full resize-none rounded-xl border bg-background px-3 py-2 outline-none focus:ring"
       />
-      <button
-        type="submit"
-        className="rounded-xl px-4 py-2 bg-amber-600 text-white disabled:opacity-50"
-        disabled={busy}
-        aria-busy={busy}
-      >
-        {buttonLabel}
-      </button>
-    </form>
+      <div className="mt-2 flex justify-end">
+        <button
+          onClick={send}
+          disabled={busy || !text.trim()}
+          className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground shadow hover:shadow-md disabled:opacity-50"
+        >
+          {busy ? "Sending…" : "Reply"}
+        </button>
+      </div>
+    </div>
   );
 }
