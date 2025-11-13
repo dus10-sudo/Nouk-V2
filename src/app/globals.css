@@ -46,3 +46,36 @@ h1 { letter-spacing: -0.02em; }
   background: var(--accent);
   color: var(--accent-ink);
 }
+:root{
+  /* parchment + ink from the mock */
+  --paper:#EDE1CE;          /* page background (slightly darker) */
+  --card:#F6EAD6;           /* cards */
+  --ring:#E8DCC8;           /* card border/ring */
+  --ink:#3E342F;            /* headings & icons */
+  --muted:#7A6E65;          /* subtitles */
+  --accent:#C87553;         /* button */
+  --accent-press:#B86748;
+  --shadow:0 1px 0 rgba(0,0,0,.03), 0 8px 24px rgba(0,0,0,.06);
+  --soft:0 4px 18px rgba(0,0,0,.08);
+}
+
+/* base surfaces */
+body{ background:var(--paper); color:var(--ink); }
+
+.bg-card{ background:var(--card); }
+.border-ring{ border-color:var(--ring); }
+.text-ink{ color:var(--ink); }
+.text-muted{ color:var(--muted); }
+
+.primary{ background:var(--accent); color:#fff; }
+.primary:active{ background:var(--accent-press); }
+.shadow-card{ box-shadow:var(--shadow); }
+.shadow-soft{ box-shadow:var(--soft); }
+
+/* typography to match the mock more closely */
+h1{ letter-spacing:-.015em; }
+.room-title{ font-size:26px; line-height:1.05; letter-spacing:-.01em; }
+.room-sub{ color:var(--muted); }
+
+/* remove blue link default (SSR fallback flash) */
+a{ color:inherit; text-decoration:none; }
