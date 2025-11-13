@@ -1,37 +1,42 @@
+// src/components/RoomCard.tsx
 import Link from "next/link";
+import type { ComponentType, SVGProps } from "react";
+import { IconChevron } from "@/components/Icons";
 
-type IconType = (props: { className?: string }) => JSX.Element;
+type IconType = ComponentType<SVGProps<SVGSVGElement>>;
 
-type RoomCardProps = {
+type Props = {
   href: string;
   Icon: IconType;
   title: string;
   subtitle: string;
 };
 
-export default function RoomCard({
-  href,
-  Icon,
-  title,
-  subtitle,
-}: RoomCardProps) {
+export default function RoomCard({ href, Icon, title, subtitle }: Props) {
   return (
-    <Link
-      href={href}
-      className="block rounded-[24px] bg-[var(--card)] border border-[var(--stroke)] shadow-soft px-4 py-3"
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--badge)]">
-          <Icon className="h-6 w-6 text-[var(--ink)]" />
-        </div>
+    <Link href={href} className="block">
+      <article className="flex items-center justify-between gap-4 rounded-2xl border border-ring bg-card px-4 py-3 shadow-soft hover:shadow-card transition-shadow">
+        <div className="flex items-center gap-4">
+          {/* Icon pill */}
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--paper)] text-ink shadow-card/40">
+            <Icon className="w-5 h-5" />
+          </div>
 
-        <div className="flex-1">
-          <div className="room-title font-serif">{title}</div>
-          <div className="mt-0.5 text-[13px] text-[var(--muted)]">
-            {subtitle}
+          <div>
+            <div className="room-title font-medium text-ink">
+              {title}
+            </div>
+            <div className="room-sub text-[13px]">
+              {subtitle}
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Chevron */}
+        <div className="text-ink/30">
+          <IconChevron className="w-4 h-4" />
+        </div>
+      </article>
     </Link>
   );
 }
