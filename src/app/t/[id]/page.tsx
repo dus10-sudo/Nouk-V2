@@ -152,6 +152,20 @@ export default async function ThreadPage({ params: { id } }: Props) {
               "use server";
               await addReply(id, text);
             }}
+            {thread.link && (
+  <a
+    href={thread.link}
+    target="_blank"
+    rel="noreferrer"
+    className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--surface)] px-3 py-1 text-[13px] text-[var(--accent)] underline-offset-2 hover:underline"
+  >
+    Open link
+    <span className="truncate max-w-[160px] text-[var(--muted)]">
+      {new URL(thread.link).hostname}
+    </span>
+  </a>
+)}
+
           />
         </section>
       </div>
