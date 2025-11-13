@@ -9,7 +9,7 @@ export type ThreadWithRoom = {
   link_url?: string | null;
   room: {
     slug: string;
-    title: string;
+    name: string;
   };
 };
 
@@ -24,16 +24,18 @@ export async function getThreadById(id: string): Promise<ThreadWithRoom | null> 
         link_url,
         room:room_id (
           slug,
-          title
+          name
         )
       `
     )
     .eq("id", id)
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("❌ getThreadById error:", error);
+    return null;
+  }
 
-  // Fix Supabase array join -> flatten to single object
   const room = Array.isArray(data.room) ? data.room[0] : data.room;
 
   return {
@@ -43,7 +45,7 @@ export async function getThreadById(id: string): Promise<ThreadWithRoom | null> 
     link_url: data.link_url ?? null,
     room: {
       slug: room.slug,
-      title: room.title,
-    }
+      name: room.name,
+    },
   };
 }
