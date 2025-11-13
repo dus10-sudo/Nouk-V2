@@ -1,50 +1,52 @@
-// src/components/icons.tsx
-import React from 'react';
-
-type Props = React.SVGProps<SVGSVGElement>;
-const base = 'w-6 h-6';
-
-export const BooksIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <path d="M6 4h4a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H6v-12Z" strokeWidth="1.5" />
-    <path d="M6 4h-.5A1.5 1.5 0 0 0 4 5.5v11A1.5 1.5 0 0 0 5.5 18H6" strokeWidth="1.5" />
-    <path d="M14 6h4m-4 4h4m-4 4h4" strokeWidth="1.5" />
-  </svg>
-);
-
-export const PotIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <path d="M3 11h18" strokeWidth="1.5" />
-    <path d="M6 11v4a6 6 0 0 0 12 0v-4" strokeWidth="1.5" />
-    <path d="M8 7h8" strokeWidth="1.5" />
-  </svg>
-);
-
-export const ClapperIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <rect x="3" y="9" width="18" height="10" rx="2" strokeWidth="1.5" />
-    <path d="M3 9l3-5 5 5M11 4l4 5 3-5" strokeWidth="1.5" />
-  </svg>
-);
-
-export const GamepadIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <path d="M7 14h10a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3Z" strokeWidth="1.5" />
-    <path d="M9 11H7m1-1v2M16 10h.01M18 12h.01" strokeWidth="1.5" />
-  </svg>
-);
-
-export const ToolboxIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <rect x="3" y="9" width="18" height="10" rx="2" strokeWidth="1.5" />
-    <path d="M8 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeWidth="1.5" />
-    <path d="M3 13h18" strokeWidth="1.5" />
-  </svg>
-);
-
-export const DeskIcon = (p: Props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={base} {...p}>
-    <rect x="3" y="10" width="18" height="8" rx="2" strokeWidth="1.5" />
-    <path d="M7 10V7h10v3" strokeWidth="1.5" />
-  </svg>
-);
+export function IconLibrary(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth="1.6" d="M6 4h2v16H6zM10 4h2v16h-2zM14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4z"/>
+    </svg>
+  );
+}
+export function IconKitchen(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth="1.6" d="M4 11h16M6 11V7a6 6 0 0 1 12 0v4M5 15h14v4H5z"/>
+    </svg>
+  );
+}
+export function IconTheater(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <rect x="3" y="5" width="18" height="12" rx="2" strokeWidth="1.6"/>
+      <path strokeWidth="1.6" d="M8 21h8"/>
+    </svg>
+  );
+}
+export function IconGame(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <rect x="4" y="8" width="16" height="8" rx="4" strokeWidth="1.6"/>
+      <path strokeWidth="1.6" d="M8 12h2M7 12h2M16 12h.01M18 12h.01"/>
+    </svg>
+  );
+}
+export function IconGarage(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth="1.6" d="M3 10l9-6 9 6v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+      <path strokeWidth="1.6" d="M7 20v-6h10v6"/>
+    </svg>
+  );
+}
+export function IconStudy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth="1.6" d="M4 6h16v12H4zM8 6v12"/>
+    </svg>
+  );
+}
+export function IconChevron(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6"/>
+    </svg>
+  );
+}
