@@ -1,44 +1,55 @@
 // src/app/room/[slug]/page.tsx
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { getRoomBySlug, listThreads, type Room, type Thread } from '@/lib/supabase';
-import ThreadCard from '@/components/ThreadCard';
+import { getRoomBySlug, listThreadsForRoom } from '@/lib/queries';
 import NewThreadButton from '@/components/NewThreadButton';
+import ThreadCard from '@/components/ThreadCard';
 
-type Params = { slug: string };
+type Props = { params: { slug: string } };
 
-export default async function RoomPage({ params }: { params: Params }) {
-  const { slug } = params;
-  const room: Room | null = await getRoomBySlug(slug);
-  if (!room) return notFound();
+export default async function RoomPage({ params: { slug } }: Props) {
+  const room = await getRoomBySlug(slug);
+  if (!room) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <p className="text-stone-600 dark:text-stone-400">Room not found.</p>
+      </main>
+    );
+  }
 
-  const threads: Thread[] = await listThreads(room.id);
+  const threads = await listThreadsForRoom(room.id);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
-      <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-        <Link href="/" className="hover:underline">
-          Rooms
-        </Link>
-        <span aria-hidden>›</span>
-        <span className="text-foreground">{room.title ?? slug}</span>
+      {/* Breadcrumb */}
+      <div className="text-sm text-stone-600 dark:text-stone-400">
+        <Link href="/" className="hover:underline">Rooms</Link>
+        <span aria-hidden> › </span>
+        <span className="text-foreground">{room.name ?? slug}</span>
       </div>
 
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{room.title}</h1>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100">{room.name}</h1>
+          {room.description && (
+            <p className="text-stone-600 dark:text-stone-400">{room.description}</p>
+          )}
+        </div>
         <NewThreadButton roomSlug={slug} />
-      </header>
+      </div>
 
+      {/* Threads */}
       <ul className="space-y-3">
         {threads.map((t) => (
           <li key={t.id}>
-            <ThreadCard thread={t} />
+            <ThreadCard threadId={t.id} title={t.title} lastActivity={t.last_activity} posts={t.posts_count ?? 0} />
           </li>
         ))}
-        {threads.length === 0 && (
-          <li className="text-stone-600 dark:text-stone-400">No threads yet.</li>
-        )}
       </ul>
+
+      {threads.length === 0 && (
+        <p className="text-stone-600 dark:text-stone-400">No threads yet. Be the first to start one.</p>
+      )}
     </main>
   );
 }
