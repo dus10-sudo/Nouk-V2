@@ -1,59 +1,49 @@
 // src/lib/threads.ts
-
 import { supabase } from "./supabase";
 
 export type ThreadWithRoom = {
   id: string;
   title: string;
   created_at: string;
-  link_url: string | null;
-  posts_count: number;
-  room_id: string;
+  body?: string | null;
+  link_url?: string | null;
   room: {
     slug: string;
     title: string;
-  } | null;
+  };
 };
 
-export async function getThread(id: string): Promise<ThreadWithRoom | null> {
-  // 1) Fetch the thread itself
-  const { data: thread, error } = await supabase
+export async function getThreadById(id: string): Promise<ThreadWithRoom | null> {
+  const { data, error } = await supabase
     .from("threads")
-    .select("id, title, created_at, link_url, posts_count, room_id")
+    .select(
+      `
+        id,
+        title,
+        created_at,
+        link_url,
+        room:room_id (
+          slug,
+          title
+        )
+      `
+    )
     .eq("id", id)
-    .maybeSingle();
+    .single();
 
-  if (error) {
-    console.error("Error loading thread:", error);
-    return null;
-  }
-  if (!thread) {
-    return null;
-  }
+  if (error || !data) return null;
 
-  // 2) Fetch the room this thread belongs to
-  const { data: room, error: roomError } = await supabase
-    .from("rooms")
-    .select("slug, title")
-    .eq("id", thread.room_id)
-    .maybeSingle();
-
-  if (roomError) {
-    console.error("Error loading room for thread:", roomError);
-  }
+  // Fix Supabase array join -> flatten to single object
+  const room = Array.isArray(data.room) ? data.room[0] : data.room;
 
   return {
-    id: thread.id,
-    title: thread.title,
-    created_at: thread.created_at,
-    link_url: thread.link_url ?? null,
-    posts_count: thread.posts_count ?? 0,
-    room_id: thread.room_id,
-    room: room
-      ? {
-          slug: room.slug,
-          title: room.title,
-        }
-      : null,
+    id: data.id,
+    title: data.title,
+    created_at: data.created_at,
+    link_url: data.link_url ?? null,
+    room: {
+      slug: room.slug,
+      title: room.title,
+    }
   };
 }
