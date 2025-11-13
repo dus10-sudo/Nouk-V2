@@ -1,57 +1,59 @@
 // src/lib/threads.ts
+
 import { supabase } from "./supabase";
 
 export type ThreadWithRoom = {
   id: string;
   title: string;
   created_at: string;
+  link_url: string | null;
+  posts_count: number;
+  room_id: string;
   room: {
-    slug: string | null;
-    title: string | null;
+    slug: string;
+    title: string;
   } | null;
 };
 
 export async function getThread(id: string): Promise<ThreadWithRoom | null> {
-  const { data, error } = await supabase
+  // 1) Fetch the thread itself
+  const { data: thread, error } = await supabase
     .from("threads")
-    .select(
-      `
-      id,
-      title,
-      created_at,
-      room:room_id (
-        slug,
-        title
-      )
-    `
-    )
+    .select("id, title, created_at, link_url, posts_count, room_id")
     .eq("id", id)
     .maybeSingle();
 
   if (error) {
-    console.error("getThread error", error);
+    console.error("Error loading thread:", error);
+    return null;
+  }
+  if (!thread) {
     return null;
   }
 
-  if (!data) return null;
+  // 2) Fetch the room this thread belongs to
+  const { data: room, error: roomError } = await supabase
+    .from("rooms")
+    .select("slug, title")
+    .eq("id", thread.room_id)
+    .maybeSingle();
 
-  const raw: any = data;
+  if (roomError) {
+    console.error("Error loading room for thread:", roomError);
+  }
 
-  // Supabase sometimes returns related rows as an array; normalize to a single object or null
-  const roomRaw = raw.room;
-  const roomObj = Array.isArray(roomRaw) ? roomRaw[0] ?? null : roomRaw ?? null;
-
-  const thread: ThreadWithRoom = {
-    id: raw.id,
-    title: raw.title,
-    created_at: raw.created_at,
-    room: roomObj
+  return {
+    id: thread.id,
+    title: thread.title,
+    created_at: thread.created_at,
+    link_url: thread.link_url ?? null,
+    posts_count: thread.posts_count ?? 0,
+    room_id: thread.room_id,
+    room: room
       ? {
-          slug: roomObj.slug ?? null,
-          title: roomObj.title ?? null,
+          slug: room.slug,
+          title: room.title,
         }
       : null,
   };
-
-  return thread;
 }
