@@ -1,76 +1,71 @@
 // src/app/diag/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   listRooms,
+  listThreads,
+  listReplies,
   createThread,
-  addMessage,
+  addReply,
+  type Room,
 } from '@/lib/supabase';
 
 export default function Diag() {
   const [log, setLog] = useState<string[]>([]);
-  const [running, setRunning] = useState(false);
+  const push = (line: string) => setLog((l) => [...l, line]);
 
-  const push = (line: string) => setLog((prev) => [...prev, line]);
+  useEffect(() => {
+    let mounted = true;
 
-  const run = async () => {
-    if (running) return;
-    setRunning(true);
-    setLog([]);
+    (async () => {
+      try {
+        push('Fetching rooms…');
+        const rooms = await listRooms();
+        push(`rooms: ${rooms.length}`);
+        if (!rooms.length) {
+          push('No rooms found (check SQL seed + is_active flags).');
+          return;
+        }
 
-    try {
-      push('Listing rooms…');
-      const rooms = await listRooms();
-      push(`Rooms count: ${rooms.length}`);
-      if (!rooms.length) {
-        push('No rooms found. Seed rooms first.');
-        return;
+        const first: Room = rooms[0]!;
+        push(`Using room: ${first.title} (${first.slug})`);
+
+        push('Creating a test thread…');
+        const threadId = await createThread(first.slug, 'Diag thread');
+        push(`thread id: ${threadId}`);
+
+        push('Posting a test reply…');
+        await addReply(threadId, 'Hello from /diag');
+        push('reply posted');
+
+        push('Reading threads for this room…');
+        const threads = await listThreads(first.id);
+        push(`threads now: ${threads.length}`);
+
+        push('Reading replies for our thread…');
+        const replies = await listReplies(threadId);
+        push(`replies for our thread: ${replies.length}`);
+      } catch (e: any) {
+        push(`ERR: ${e?.message ?? String(e)}`);
+      } finally {
+        if (mounted) push('Done.');
       }
+    })();
 
-      const first = rooms[0];
-      push(`Using room: ${first.name} (${first.slug})`);
-
-      push('Creating a test thread…');
-      // POSITONAL ARGS: (roomSlug, title, link_url?)
-      const threadId = await createThread(first.slug, 'Diag thread', null);
-      push(`Thread created with id: ${threadId}`);
-
-      push('Posting a test message…');
-      await addMessage(threadId, 'Hello from /diag');
-      push('Message posted ✓');
-
-      push('All good! Visit the home page or the room to verify.');
-    } catch (e: any) {
-      push(`ERROR: ${e?.message ?? String(e)}`);
-    } finally {
-      setRunning(false);
-    }
-  };
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-xl font-semibold mb-4">Diagnostics</h1>
-
-      <button
-        onClick={run}
-        disabled={running}
-        className="rounded-lg bg-teal-600 text-white px-4 py-2 hover:bg-teal-700 disabled:opacity-60"
-      >
-        {running ? 'Running…' : 'Run Tests'}
-      </button>
-
-      <div className="mt-6 space-y-1 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 text-sm">
-        {log.length === 0 ? (
-          <p className="opacity-70">Logs will appear here…</p>
-        ) : (
-          log.map((l, i) => (
-            <div key={i} className="font-mono">
-              {l}
-            </div>
-          ))
-        )}
-      </div>
+      <h1 className="text-2xl font-semibold mb-4">/diag</h1>
+      <ul className="space-y-1 text-sm font-mono">
+        {log.map((line, i) => (
+          <li key={i}>{line}</li>
+        ))}
+      </ul>
     </main>
   );
 }
