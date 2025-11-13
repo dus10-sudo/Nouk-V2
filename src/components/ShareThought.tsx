@@ -22,20 +22,18 @@ export default function ShareThought() {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
-  // Lock body scroll when the sheet is open
+  // Lock scroll when open
   useEffect(() => {
     const prev = document.body.style.overflow;
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = prev || '';
+    document.body.style.overflow = open ? 'hidden' : prev || '';
     return () => { document.body.style.overflow = prev || ''; };
   }, [open]);
 
-  // Close helpers
   const close = () => setOpen(false);
 
   return (
     <>
-      {/* CTA — hidden while modal is open so it doesn't get pushed/covered */}
+      {/* Bottom CTA — hidden while modal is open */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -45,17 +43,16 @@ export default function ShareThought() {
         </button>
       )}
 
-      {/* Overlay */}
+      {/* Centered modal */}
       {open && (
         <div
-          className="fixed inset-0 z-[60] bg-black/35"
-          onClick={close}
-          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
           role="dialog"
+          aria-modal="true"
+          onClick={close}
         >
-          {/* Bottom sheet */}
           <div
-            className="animate-modalIn fixed left-1/2 -translate-x-1/2 bottom-[max(8px,env(safe-area-inset-bottom))] z-[70] w-[92%] max-w-[720px] rounded-2xl border border-[var(--ring)] bg-[var(--card)] shadow-soft p-5"
+            className="w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-5 shadow-soft"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-1 text-[22px] font-serif">Start a New Nouk</h2>
@@ -102,7 +99,6 @@ export default function ShareThought() {
               className="mb-4 w-full rounded-xl border border-[var(--ring)] bg-white/70 px-3 py-2 outline-none"
             />
 
-            {/* Actions */}
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={close}
