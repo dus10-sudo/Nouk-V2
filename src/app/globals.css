@@ -1,1 +1,188 @@
-@tailwind base;@tailwind components;@tailwind utilities;:root{--bg:theme(colors.parchment);--ink:#1f2937;--card:#ffffffee;--ring:rgba(198,107,61,.35)}@media(prefers-color-scheme:dark){:root{--bg:theme(colors.charcoal);--ink:#e8ecef;--card:#2a353bee}}html,body{background:var(--bg);color:var(--ink)}.app-card{@apply rounded-2xl shadow-soft bg-[var(--card)] border border-black/5}.focus-ring{@apply outline-none ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-transparent}body{background-image:radial-gradient(ellipse at top left,rgba(255,255,255,.06),transparent 40%),radial-gradient(ellipse at bottom right,rgba(0,0,0,.06),transparent 40%);background-blend-mode:multiply;}
+/* ===== Tailwind (keep these if you’re using Tailwind) ===== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Nouk paper theme (exactly like the mock) ===== */
+:root{
+  --bg:#EDE4D4;            /* parchment background */
+  --card:#F6EFE4;          /* card paper */
+  --chip:#EFE6D9;          /* icon chip */
+  --ink:#3B342E;           /* primary text */
+  --ink-soft:#6F665E;      /* secondary text */
+  --ink-muted:#9B938B;     /* chevron/muted */
+  --accent:#C77955;        /* “Share a Thought” button */
+  --ring:rgba(59,52,46,.06);
+  --lift:0 1px 0 #fff inset, 0 1px 2px rgba(0,0,0,.06);
+}
+
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Page container + title spacing to match mock */
+.paper-wrap{max-width:680px;margin:0 auto;padding:36px 20px 28px;}
+.paper-title{
+  text-align:center;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size:48px; line-height:50px; letter-spacing:-0.01em;
+  color:var(--ink);
+  margin-bottom:18px;
+}
+
+/* Card stack spacing exactly 12px like the mock */
+.paper-stack{display:flex;flex-direction:column;gap:12px;}
+
+/* Card */
+.paper-card{
+  display:block;
+  background:var(--card);
+  padding:16px 18px;
+  border-radius:16px;
+  box-shadow:var(--lift);
+  box-sizing:border-box;
+  position:relative;
+  border:1px solid var(--ring);
+}
+
+/* Icon chip (44x44) */
+.paper-chip{
+  width:44px;height:44px;border-radius:12px;
+  background:var(--chip);
+  border:1px solid var(--ring);
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 44px;
+}
+
+/* Title + subtitle within a card */
+.paper-card-title{
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size:24px; line-height:28px; color:var(--ink);
+}
+.paper-card-sub{
+  font-size:16px; line-height:22px; color:var(--ink-soft);
+}
+
+/* Chevron */
+.paper-chevron{color:var(--ink-muted); margin-left:auto;}
+
+/* Primary button */
+.paper-cta{
+  display:block; width:100%;
+  text-align:center; padding:16px 18px;
+  border-radius:16px; background:var(--accent); color:#fff;
+  font-size:16px; line-height:20px; font-weight:600;
+  box-shadow:var(--lift); border:1px solid var(--ring);
+}
+
+/* =====================  ICON MASKS  ===================== */
+/* All icons are 1-color via CSS mask; they use currentColor (#5B524A in the page) */
+.icon{display:inline-block;width:26px;height:26px;color:#5B524A;background:currentColor;}
+
+/* Books */
+.icon-mask-books{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='3' width='4' height='18' rx='1'/>\
+    <rect x='9' y='3' width='4' height='18' rx='1'/>\
+    <rect x='15' y='3' width='6' height='18' rx='1'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='3' width='4' height='18' rx='1'/>\
+    <rect x='9' y='3' width='4' height='18' rx='1'/>\
+    <rect x='15' y='3' width='6' height='18' rx='1'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Pot (Kitchen) */
+.icon-mask-pot{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='9' width='18' height='8' rx='2'/>\
+    <rect x='10' y='6' width='4' height='2' rx='1'/>\
+    <rect x='2' y='11' width='2' height='4' rx='1'/>\
+    <rect x='20' y='11' width='2' height='4' rx='1'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='9' width='18' height='8' rx='2'/>\
+    <rect x='10' y='6' width='4' height='2' rx='1'/>\
+    <rect x='2' y='11' width='2' height='4' rx='1'/>\
+    <rect x='20' y='11' width='2' height='4' rx='1'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Ticket (Theater) */
+.icon-mask-ticket{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <path d='M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0-2 2 2 2 0 0 0 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 2-2 2 2 0 0 0-2-2V8z'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <path d='M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0-2 2 2 2 0 0 0 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 2-2 2 2 0 0 0-2-2V8z'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Gamepad (Game Room) */
+.icon-mask-gamepad{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <path d='M7 9h10a4 4 0 0 1 3.9 4.9l-1 3.5a2.5 2.5 0 0 1-4.6.3L14.5 16h-5l-.8 1.7a2.5 2.5 0 0 1-4.6-.3l-1-3.5A4 4 0 0 1 7 9z'/>\
+    <rect x='8.2' y='11.5' width='3.2' height='1.2' rx='.6'/>\
+    <rect x='9.4' y='10.3' width='1.2' height='3.2' rx='.6'/>\
+    <circle cx='15.8' cy='12' r='0.9'/>\
+    <circle cx='17.6' cy='13.8' r='0.9'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <path d='M7 9h10a4 4 0 0 1 3.9 4.9l-1 3.5a2.5 2.5 0 0 1-4.6.3L14.5 16h-5l-.8 1.7a2.5 2.5 0 0 1-4.6-.3l-1-3.5A4 4 0 0 1 7 9z'/>\
+    <rect x='8.2' y='11.5' width='3.2' height='1.2' rx='.6'/>\
+    <rect x='9.4' y='10.3' width='1.2' height='3.2' rx='.6'/>\
+    <circle cx='15.8' cy='12' r='0.9'/>\
+    <circle cx='17.6' cy='13.8' r='0.9'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Toolbox (Garage) */
+.icon-mask-toolbox{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='4' y='9' width='16' height='10' rx='2'/>\
+    <rect x='8' y='6' width='8' height='3' rx='1'/>\
+    <rect x='10' y='12' width='4' height='2' rx='1'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='4' y='9' width='16' height='10' rx='2'/>\
+    <rect x='8' y='6' width='8' height='3' rx='1'/>\
+    <rect x='10' y='12' width='4' height='2' rx='1'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Desk (Study) */
+.icon-mask-desk{
+  -webkit-mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='10' width='18' height='8' rx='2'/>\
+    <rect x='6' y='7' width='5' height='2' rx='1'/>\
+    <rect x='13' y='7' width='5' height='2' rx='1'/>\
+  </svg>") no-repeat center/contain;
+          mask: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+    <rect x='3' y='10' width='18' height='8' rx='2'/>\
+    <rect x='6' y='7' width='5' height='2' rx='1'/>\
+    <rect x='13' y='7' width='5' height='2' rx='1'/>\
+  </svg>") no-repeat center/contain;
+}
+
+/* Fallback dot */
+.icon-mask-dot{
+  -webkit-mask: radial-gradient(circle at center, #000 68%, transparent 69%) no-repeat center/contain;
+          mask: radial-gradient(circle at center, #000 68%, transparent 69%) no-repeat center/contain;
+}
