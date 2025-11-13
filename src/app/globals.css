@@ -30,7 +30,12 @@ a{ color: inherit; text-decoration: none; }
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+/* Typography tuning to match the mock more closely */
+h1 { letter-spacing: -0.02em; }
+.card .card-row .text-[28px]{ letter-spacing:-0.01em; }
 
+/* Reduce default link tap highlight on mobile */
+* { -webkit-tap-highlight-color: transparent; }
 /* Optional helpers used by the cards/button */
 .card{
   @apply bg-card rounded-2xl shadow-card border border-[color:var(--ring)];
