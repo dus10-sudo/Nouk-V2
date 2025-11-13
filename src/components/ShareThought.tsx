@@ -1,11 +1,12 @@
+// src/components/ShareThought.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Room = { slug: string; name: string; description?: string };
 
-const ROOMS: Room[] = [
+const ROOM_PRESETS: Room[] = [
   { slug: 'library',   name: 'Library',   description: 'Books, projects, ideas' },
   { slug: 'kitchen',   name: 'Kitchen',   description: 'Recipes, cooking, food talk' },
   { slug: 'theater',   name: 'Theater',   description: 'Movies & TV' },
@@ -21,130 +22,104 @@ export default function ShareThought() {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
-  // esc to close
+  // Lock body scroll when the sheet is open
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    if (open) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = prev || '';
+    return () => { document.body.style.overflow = prev || ''; };
   }, [open]);
 
-  const linkHint = useMemo(() => {
-    if (!link) return '';
-    const url = /^https?:\/\/\S+/i.test(link);
-    return url ? 'Link detected.' : 'No link detected — treating as topic.';
-  }, [link]);
-
-  const start = () => {
-    if (!room) return;
-    const dest = `/room/${room.slug}?title=${encodeURIComponent(title)}&link=${encodeURIComponent(link)}`;
-    router.push(dest);
-    setOpen(false);
-  };
+  // Close helpers
+  const close = () => setOpen(false);
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="nouk-cta w-full max-w-[680px] px-6 py-4 text-[18px] font-medium shadow-[0_2px_0_rgba(0,0,0,0.05)]"
-      >
-        Share a Thought
-      </button>
+      {/* CTA — hidden while modal is open so it doesn't get pushed/covered */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="nouk-cta fixed left-1/2 -translate-x-1/2 bottom-[max(16px,env(safe-area-inset-bottom))] z-[40] w-[92%] max-w-[720px] px-6 py-4 text-[18px] font-medium rounded-2xl shadow-[0_2px_0_rgba(0,0,0,0.05)]"
+        >
+          Share a Thought
+        </button>
+      )}
 
+      {/* Overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-[2px] p-4"
-          role="dialog"
+          className="fixed inset-0 z-[60] bg-black/35"
+          onClick={close}
           aria-modal="true"
-          onClick={() => setOpen(false)}
+          role="dialog"
         >
+          {/* Bottom sheet */}
           <div
+            className="animate-modalIn fixed left-1/2 -translate-x-1/2 bottom-[max(8px,env(safe-area-inset-bottom))] z-[70] w-[92%] max-w-[720px] rounded-2xl border border-[var(--ring)] bg-[var(--card)] shadow-soft p-5"
             onClick={(e) => e.stopPropagation()}
-            className="
-              w-full max-w-[560px]
-              rounded-2xl border border-[var(--ring)]
-              bg-[var(--card)] shadow-[var(--soft)]
-              px-5 sm:px-6 pt-6 pb-4 animate-modalIn
-            "
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 12px))' }}
           >
-            {/* Title */}
-            <div className="mb-4">
-              <h2 className="font-serif text-[22px] leading-[1.1] tracking-[-0.01em]">
-                Start a New Nouk
-              </h2>
-              <p className="text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
+            <h2 className="mb-1 text-[22px] font-serif">Start a New Nouk</h2>
+            <p className="mb-4 text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
+
+            {/* Step 1 */}
+            <label className="mb-2 block text-[14px] text-[var(--muted)]">
+              1) Where do you want to post?
+            </label>
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {ROOM_PRESETS.map((r) => {
+                const selected = room?.slug === r.slug;
+                return (
+                  <button
+                    key={r.slug}
+                    onClick={() => setRoom(r)}
+                    className={`rounded-xl border px-3 py-2 text-left transition
+                      ${selected
+                        ? 'border-[var(--select)] bg-[var(--select-bg)]'
+                        : 'border-[var(--ring)] bg-[var(--card)] hover:bg-white/50'
+                      }`}
+                  >
+                    <div className="font-medium">{r.name}</div>
+                    <div className="text-[12px] text-[var(--muted)]">{r.description}</div>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto pr-1">
-              {/* Step 1: vertical radio list */}
-              <label className="mb-2 block text-[14px] text-[var(--muted)]">
-                1) Where do you want to post?
-              </label>
-              <div role="radiogroup" className="space-y-2">
-                {ROOMS.map((r) => {
-                  const selected = room?.slug === r.slug;
-                  return (
-                    <button
-                      key={r.slug}
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setRoom(r)}
-                      className={[
-                        'w-full text-left rounded-xl border px-3 py-3 transition-colors',
-                        selected
-                          ? 'border-[var(--ring)] bg-white/70'
-                          : 'border-[var(--ring)] bg-[var(--card)] hover:bg-white/50'
-                      ].join(' ')}
-                    >
-                      <div className="font-medium">{r.name}</div>
-                      <div className="text-[12px] text-[var(--muted)]">{r.description}</div>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Step 2 */}
+            <label className="mb-2 block text-[14px] text-[var(--muted)]">
+              2) What’s the thread about? (optional link/topic)
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Say something small to start…"
+              className="mb-2 w-full rounded-xl border border-[var(--ring)] bg-white/70 px-3 py-2 outline-none"
+            />
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="Optional link (YouTube, Spotify, article…)"
+              className="mb-4 w-full rounded-xl border border-[var(--ring)] bg-white/70 px-3 py-2 outline-none"
+            />
 
-              {/* Step 2: inputs */}
-              <label className="mb-2 mt-5 block text-[14px] text-[var(--muted)]">
-                2) What’s the thread about? (optional link/topic)
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Say something small to start…"
-                className="
-                  mb-2 w-full rounded-xl
-                  border border-[var(--ring)] bg-white/85 focus:bg-white
-                  px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]
-                "
-              />
-              <input
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                placeholder="Optional link (YouTube, Spotify, article…)"
-                className="
-                  w-full rounded-xl
-                  border border-[var(--ring)] bg-white/85 focus:bg-white
-                  px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]
-                "
-              />
-              {!!linkHint && (
-                <p className="mt-2 text-[13px] text-[var(--muted)]">{linkHint}</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-4 flex items-center justify-end gap-2">
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2">
               <button
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className="rounded-xl border border-[var(--ring)] px-4 py-2"
               >
                 Cancel
               </button>
               <button
-                onClick={start}
+                onClick={() => {
+                  const dest = room
+                    ? `/room/${room.slug}?title=${encodeURIComponent(title)}&link=${encodeURIComponent(link)}`
+                    : '/';
+                  router.push(dest);
+                  close();
+                }}
                 disabled={!room}
-                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-white disabled:opacity-60 active:translate-y-[0.5px]"
+                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-white disabled:opacity-60"
               >
                 Start Nouk
               </button>
@@ -154,4 +129,4 @@ export default function ShareThought() {
       )}
     </>
   );
-                }
+}
