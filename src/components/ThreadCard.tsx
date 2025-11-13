@@ -1,22 +1,25 @@
 // src/components/ThreadCard.tsx
-'use client';
-
 import Link from 'next/link';
-import type { Thread } from '@/lib/supabase';
 
-export default function ThreadCard({ thread }: { thread: Thread }) {
+export default function ThreadCard({
+  threadId,
+  title,
+  lastActivity,
+  posts,
+}: {
+  threadId: string;
+  title: string;
+  lastActivity: string;
+  posts: number;
+}) {
+  const since = new Date(lastActivity).toLocaleString();
   return (
     <Link
-      href={`/t/${thread.id}`}
-      className="block rounded-xl border border-stone-200 dark:border-stone-800 p-4 hover:bg-stone-50 dark:hover:bg-stone-900"
+      href={`/t/${threadId}`}
+      className="block rounded-xl border border-stone-200 dark:border-stone-700 p-4 hover:border-stone-400 dark:hover:border-stone-500 transition"
     >
-      <div className="flex items-center justify-between">
-        <div className="text-lg">{thread.title}</div>
-        <div className="text-xs text-stone-500">{thread.posts_count} posts</div>
-      </div>
-      {thread.link_url ? (
-        <div className="text-sm text-stone-600 dark:text-stone-400 mt-1">{thread.link_url}</div>
-      ) : null}
+      <div className="text-lg text-stone-900 dark:text-stone-100">{title}</div>
+      <div className="text-xs text-stone-500 mt-1">{posts} posts • last activity {since}</div>
     </Link>
   );
 }
