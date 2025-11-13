@@ -1,29 +1,31 @@
+// src/components/ThreadCard.tsx
+"use client";
+
 import Link from "next/link";
-import type { Thread } from "@/lib/supabase";
 
-export default function ThreadCard({ thread }: { thread: Thread }) {
-  const expires = new Date(thread.expires_at).getTime();
-  const minsLeft = Math.max(0, Math.round((expires - Date.now()) / 60000));
-  const nearEnd = minsLeft <= 30;
+type Props = {
+  threadId: string;
+  title?: string | null;
+  messageCount?: number | null;
+  expiresAt?: string;
+};
 
+export default function ThreadCard({ threadId, title, messageCount, expiresAt }: Props) {
   return (
     <Link
-      href={`/t/${thread.id}`}
-      className={`block rounded-2xl border bg-card p-4 shadow-sm transition hover:shadow-md ${
-        nearEnd ? "ring-1 ring-orange-300 animate-[pulse_2.5s_ease-in-out_infinite]" : ""
-      }`}
+      href={`/t/${threadId}`}
+      className="block rounded-2xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/70 dark:bg-neutral-900/60 p-4 hover:shadow-sm transition-shadow"
     >
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">{thread.title}</h3>
-        <span className="text-xs text-muted-foreground">{minsLeft}m left</span>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold">{title || "Untitled thread"}</h3>
+        {typeof messageCount === "number" && (
+          <span className="text-xs opacity-70">{messageCount} msgs</span>
+        )}
       </div>
-      {thread.link_url && (
-        <p className="mt-1 truncate text-sm text-muted-foreground">{thread.link_url}</p>
-      )}
-      {thread.message_count != null && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          {thread.message_count} replies
-        </p>
+      {expiresAt && (
+        <div className="mt-1 text-xs opacity-60">
+          Expires {new Date(expiresAt).toLocaleString()}
+        </div>
       )}
     </Link>
   );
