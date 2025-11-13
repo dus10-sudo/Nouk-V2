@@ -1,16 +1,16 @@
 // src/app/room/[slug]/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   getRoomBySlug,
   listThreads,
   createThread,
   type Room,
   type Thread,
-} from "@/lib/supabase";
+} from '@/lib/supabase';
 
 export default function RoomPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,8 +18,8 @@ export default function RoomPage() {
   const search = useSearchParams();
 
   const pendingCreate = useRef(false);
-  const titleQP = search.get("title")?.trim() ?? "";
-  const linkQP = search.get("link")?.trim() ?? "";
+  const titleQP = search.get('title')?.trim() ?? '';
+  const linkQP = search.get('link')?.trim() ?? '';
 
   const [room, setRoom] = useState<Room | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -28,11 +28,13 @@ export default function RoomPage() {
   // Load room + threads
   useEffect(() => {
     let alive = true;
+
     (async () => {
       try {
         const r = await getRoomBySlug(slug);
         if (!alive) return;
         setRoom(r);
+
         if (r) {
           const t = await listThreads(r.id);
           if (!alive) return;
@@ -42,6 +44,7 @@ export default function RoomPage() {
         if (alive) setLoading(false);
       }
     })();
+
     return () => {
       alive = false;
     };
@@ -50,20 +53,28 @@ export default function RoomPage() {
   // If we came from Share modal with ?title/link, auto-create then redirect
   useEffect(() => {
     if (!room) return;
+
     const hasCreateParams = titleQP.length > 0 || linkQP.length > 0;
     if (!hasCreateParams || pendingCreate.current) return;
 
     pendingCreate.current = true;
+
     (async () => {
       try {
         const id = await createThread(room.slug, titleQP, linkQP || null);
+
         // Clean URL and go to new thread
-       router.replace(`/t/${id}`);
-      } catch {
+        const clean = new URL(window.location.href);
+        clean.searchParams.delete('title');
+        clean.searchParams.delete('link');
+
+        router.replace(`/t/${id}`); // 👈 IMPORTANT: use /t, not /thread
+      } catch (err) {
+        console.error('Error auto-creating thread', err);
         // If creation fails, just remove QPs so we don't loop
         const clean = new URL(window.location.href);
-        clean.searchParams.delete("title");
-        clean.searchParams.delete("link");
+        clean.searchParams.delete('title');
+        clean.searchParams.delete('link');
         router.replace(clean.pathname);
         pendingCreate.current = false;
       }
@@ -72,70 +83,66 @@ export default function RoomPage() {
 
   // header crumbs text
   const crumbs = useMemo(
-    () => (room ? `Rooms › ${room.title ?? room.slug}` : "Rooms"),
+    () => (room ? `Rooms › ${room.title ?? room.slug}` : 'Rooms'),
     [room]
   );
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-20 pt-6">
-        {/* Breadcrumb */}
-        <div className="mb-1 text-[13px] text-[var(--muted)]">{crumbs}</div>
+    <main className="mx-auto max-w-[720px] px-4 pb-20">
+      {/* Breadcrumb */}
+      <div className="pt-5 pb-1 text-[14px] text-[var(--muted)]">{crumbs}</div>
 
-        {/* Header */}
-        <header className="mb-4 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="font-serif text-[32px] leading-[1.05] tracking-[-0.02em]">
-              {room?.title ?? "…"}
-            </h1>
-            {room?.description && (
-              <p className="mt-1 text-[14px] text-[var(--muted)]">
-                {room.description}
-              </p>
-            )}
-          </div>
-          <span className="rounded-full border border-[var(--stroke)] bg-[var(--badge)] px-3 py-1 text-[11px] text-[var(--muted)]">
-            Threads fade after quiet hours
-          </span>
-        </header>
+      {/* Header */}
+      <header className="mb-2 flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-[40px] leading-[1.05] tracking-[-0.01em]">
+            {room?.title ?? '…'}
+          </h1>
+          <p className="text-[16px] text-[var(--muted)]">
+            {room?.description ?? ''}
+          </p>
+        </div>
+      </header>
 
-        {/* Content */}
-        {loading ? (
-          <div className="mt-10 text-[var(--muted)]">Loading…</div>
-        ) : threads.length === 0 ? (
-          <section className="mt-8 rounded-[24px] border border-[var(--stroke)] bg-[var(--card-soft)] p-5 shadow-soft">
-            <h2 className="mb-1 font-serif text-[18px]">
-              It&apos;s quiet in here.
-            </h2>
-            <p className="text-[13px] text-[var(--muted)]">
-              No Nouks yet in this room. Start one from the{" "}
-              <span className="font-medium">Start a Nouk</span> button on the
-              home screen and it will appear here as a little stem.
-            </p>
-          </section>
-        ) : (
-          <section className="mt-4 space-y-3">
-            {threads.map((t) => (
+      {/* Threads */}
+      {loading ? (
+        <div className="mt-10 text-[var(--muted)]">Loading…</div>
+      ) : threads.length === 0 ? (
+        <div className="mt-10 rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-6 text-[var(--muted)] shadow-[var(--soft)]">
+          It&apos;s quiet in here.
+          <br />
+          No Nouks yet in this room. Start one from the home screen&apos;s{' '}
+          <span className="font-medium">Share a Thought</span> button and it
+          will appear here as a little stem.
+        </div>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {threads.map((t) => (
+            <li key={t.id}>
               <Link
-                key={t.id}
-                href={`/thread/${t.id}`}
-                className="block rounded-[24px] border border-[var(--stroke)] bg-[var(--card)] px-4 py-3 shadow-soft transition-shadow hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)]"
+                href={`/t/${t.id}`}
+                className="block rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-4 shadow-[var(--shadow)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow"
               >
-                <div className="flex flex-col gap-1">
-                  <div className="text-[16px] font-medium leading-snug">
-                    {t.title || "Untitled Nouk"}
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium text-[18px] leading-tight">
+                      {t.title}
+                    </div>
+                    <div className="text-[13px] text-[var(--muted)] mt-1">
+                      {t.posts_count ?? 0}{' '}
+                      {t.posts_count === 1 ? 'post' : 'posts'}
+                      {' · '}
+                      updated{' '}
+                      {new Date(t.last_activity).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="text-[12px] text-[var(--muted)]">
-                    {t.posts_count ?? 0}{" "}
-                    {t.posts_count === 1 ? "post" : "posts"} · last activity{" "}
-                    {new Date(t.last_activity).toLocaleString()}
-                  </div>
+                  <div className="opacity-40">›</div>
                 </div>
               </Link>
-            ))}
-          </section>
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
-            }
+}
