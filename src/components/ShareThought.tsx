@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 type Room = { slug: string; name: string; description?: string };
@@ -21,19 +22,23 @@ export default function ShareThought() {
   const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure portals work only on client
+  useEffect(() => setMounted(true), []);
 
   // Lock scroll when open
   useEffect(() => {
+    if (!open) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = open ? 'hidden' : prev || '';
-    return () => { document.body.style.overflow = prev || ''; };
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
   }, [open]);
 
   const close = () => setOpen(false);
 
   return (
     <>
-      {/* Bottom CTA — hidden while modal is open */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -43,8 +48,7 @@ export default function ShareThought() {
         </button>
       )}
 
-      {/* Centered modal */}
-      {open && (
+      {mounted && open && createPortal(
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
           role="dialog"
@@ -58,7 +62,6 @@ export default function ShareThought() {
             <h2 className="mb-1 text-[22px] font-serif">Start a New Nouk</h2>
             <p className="mb-4 text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
 
-            {/* Step 1 */}
             <label className="mb-2 block text-[14px] text-[var(--muted)]">
               1) Where do you want to post?
             </label>
@@ -82,7 +85,6 @@ export default function ShareThought() {
               })}
             </div>
 
-            {/* Step 2 */}
             <label className="mb-2 block text-[14px] text-[var(--muted)]">
               2) What’s the thread about? (optional link/topic)
             </label>
@@ -121,7 +123,8 @@ export default function ShareThought() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
