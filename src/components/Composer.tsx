@@ -3,46 +3,39 @@
 
 import { useState } from 'react';
 
-type Props = {
-  threadId: string;
-  // onSend(body) -> Promise<void>
-  onSend: (threadId: string, body: string) => Promise<void>;
-};
-
-export default function Composer({ threadId, onSend }: Props) {
+export default function Composer({ action }: { action: (text: string) => Promise<void> }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function submit() {
-    const body = text.trim();
-    if (!body) return;
+  async function send() {
+    if (!text.trim()) return;
     setBusy(true);
     try {
-      await onSend(threadId, body);
+      await action(text.trim());
       setText('');
-    } catch (e) {
-      console.error(e);
-      alert('Failed to send reply.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="flex gap-2">
-      <input
+    <div className="rounded-xl border border-stone-200 dark:border-stone-700 p-3">
+      <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Write a cozy reply…"
-        className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-transparent px-3 py-2"
+        rows={3}
+        placeholder="Write a reply…"
+        className="w-full bg-transparent outline-none"
       />
-      <button
-        onClick={submit}
-        disabled={busy}
-        className="rounded-lg bg-stone-900 text-white px-3 py-2 text-sm disabled:opacity-60 dark:bg-stone-100 dark:text-stone-900"
-      >
-        Send
-      </button>
+      <div className="mt-2 flex justify-end">
+        <button
+          disabled={busy || !text.trim()}
+          onClick={send}
+          className="px-3 py-2 rounded-lg bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+        >
+          {busy ? 'Sending…' : 'Send'}
+        </button>
+      </div>
     </div>
   );
 }
