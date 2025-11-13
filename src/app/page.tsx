@@ -10,18 +10,18 @@ import {
   IconStudy,
 } from "@/components/Icons";
 
-export default function Page() {
+export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-28">
+    <main className="mx-auto max-w-[720px] px-4 pb-28">
       {/* Title */}
-      <header className="pt-8 pb-4 text-center">
-        <h1 className="font-serif text-[56px] leading-[1.02] tracking-[-0.018em] text-ink">
+      <header className="pt-6 pb-2 text-center">
+        <h1 className="font-serif text-[56px] leading-[1.02] tracking-[-0.018em]">
           Nouk
         </h1>
       </header>
 
-      {/* Rooms list */}
-      <section className="flex-1 space-y-3">
+      {/* Room cards */}
+      <section className="mb-24 space-y-3">
         <RoomCard
           href="/room/library"
           Icon={IconLibrary}
@@ -60,12 +60,10 @@ export default function Page() {
         />
       </section>
 
-      {/* Docked Share a Thought (uses existing ShareThought.tsx) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,16px)]">
-        <div className="pointer-events-auto w-full max-w-[720px] rounded-t-3xl bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/98 to-transparent pt-4">
-          <div className="flex justify-center">
-            <ShareThought />
-          </div>
+      {/* Docked "Share a Thought" bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/95 to-transparent px-4 pb-[env(safe-area-inset-bottom,12px)] backdrop-blur-sm">
+        <div className="w-full max-w-[720px]">
+          <ShareThought />
         </div>
       </div>
     </main>
