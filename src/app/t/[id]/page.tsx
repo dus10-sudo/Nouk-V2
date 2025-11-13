@@ -1,87 +1,71 @@
-import { notFound } from 'next/navigation';
+// src/app/t/[id]/page.tsx
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import {
+  getThreadWithRoom,
+  listReplies,
+  addReply,
+  type ThreadWithRoom,
+  type Reply,
+} from '@/lib/supabase';
 import Composer from '@/components/Composer';
-import { getThread, listMessages } from '@/lib/supabase';
 
-// If your lib doesn't export these fields, we keep them optional here
-type ThreadLike = {
-  id: string;
-  title?: string | null;
-  link_url?: string | null;
-  // optional room metadata (may or may not be present from your query)
-  room_slug?: string | null;
-  room_name?: string | null;
-  room_id?: string | null;
-};
+type Params = { id: string };
 
-type Params = { params: { id: string } };
+export default async function ThreadPage({ params }: { params: Params }) {
+  const { id } = params;
 
-export const dynamic = 'force-dynamic';
+  const thread: ThreadWithRoom | null = await getThreadWithRoom(id);
+  if (!thread) return notFound();
 
-export default async function ThreadPage({ params }: Params) {
-  const id = params.id;
+  const replies: Reply[] = await listReplies(id);
 
-  const t = (await getThread(id)) as unknown as ThreadLike | null;
-  if (!t) return notFound();
-
-  const messages = await listMessages(id);
-
-  // Build a safe breadcrumb target. Prefer slug if present, otherwise just go back to Rooms.
-  const roomHref = t.room_slug ? `/room/${t.room_slug}` : '/';
-  const roomLabel = t.room_name ?? t.room_slug ?? 'Room';
+  const roomHref = thread.room?.slug ? `/room/${thread.room.slug}` : '/';
+  const roomLabel = thread.room?.title ?? thread.room?.slug ?? 'Room';
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
-        <Link href="/" className="hover:underline">Rooms</Link>
-        <span aria-hidden>›</span>
-        {t.room_slug ? (
+    <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+      <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
+        <Link href="/" className="hover:underline">
+          Rooms
+        </Link>
+        {thread.room?.slug ? (
           <>
-            <Link href={roomHref} className="hover:underline">{roomLabel}</Link>
             <span aria-hidden>›</span>
+            <Link href={roomHref} className="hover:underline">
+              {roomLabel}
+            </Link>
           </>
         ) : null}
-        <span className="text-foreground truncate">{t.title ?? 'Thread'}</span>
-      </nav>
+        <span aria-hidden>›</span>
+        <span className="text-foreground">{thread.title}</span>
+      </div>
 
-      {/* Header */}
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight">{t.title ?? 'Thread'}</h1>
-        {t.link_url ? (
-          <a
-            href={t.link_url}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-block text-sm underline"
-          >
-            Open link
-          </a>
-        ) : null}
-      </header>
+      <h1 className="text-2xl font-semibold">{thread.title}</h1>
+      {thread.link_url ? (
+        <a
+          href={thread.link_url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-blue-600 hover:underline"
+        >
+          {thread.link_url}
+        </a>
+      ) : null}
 
-      {/* Messages */}
-      <section className="space-y-3">
-        {messages.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No messages yet. Say hi 👋
+      <section aria-label="Replies" className="space-y-3">
+        {replies.map((r) => (
+          <div key={r.id} className="rounded-xl border border-stone-200 dark:border-stone-800 p-3">
+            {r.body}
           </div>
-        ) : (
-          <ul className="space-y-3">
-            {messages.map((m: any) => (
-              <li key={m.id} className="rounded-xl border bg-background p-3">
-                <div className="text-sm whitespace-pre-wrap">{m.body}</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {new Date(m.created_at).toLocaleString()}
-                </div>
-              </li>
-            ))}
-          </ul>
+        ))}
+        {replies.length === 0 && (
+          <div className="text-stone-600 dark:text-stone-400">Be the first to reply.</div>
         )}
       </section>
 
-      {/* Composer */}
-      <Composer threadId={t.id} />
+      {/* Composer expects threadId */}
+      <Composer threadId={thread.id} onSend={addReply} />
     </main>
   );
 }
