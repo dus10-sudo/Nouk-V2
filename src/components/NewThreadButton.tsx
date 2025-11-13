@@ -1,4 +1,3 @@
-// src/components/NewThreadButton.tsx
 'use client';
 
 import { useState } from 'react';
@@ -10,17 +9,29 @@ export default function NewThreadButton({ roomSlug }: { roomSlug: string }) {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const router = useRouter();
 
   async function submit() {
-    if (!title.trim()) return;
+    setErr(null);
+    const cleanTitle = title.trim();
+    const cleanLink = link.trim();
+    if (!cleanTitle) return;
+
     setBusy(true);
     try {
-      const id = await createThread(roomSlug, title.trim(), link.trim() ? link.trim() : null);
+      const id = await createThread(roomSlug, cleanTitle, cleanLink ? cleanLink : null);
       setOpen(false);
       setTitle('');
       setLink('');
       router.push(`/t/${id}`);
+    } catch (e: any) {
+      // surface the server/DB error
+      const msg =
+        e?.message ||
+        (typeof e === 'string' ? e : 'Something went wrong creating the thread.');
+      setErr(msg);
+      console.error('createThread error:', e);
     } finally {
       setBusy(false);
     }
@@ -30,7 +41,7 @@ export default function NewThreadButton({ roomSlug }: { roomSlug: string }) {
     <div>
       {!open ? (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => { setOpen(true); setErr(null); }}
           className="rounded-full px-4 py-2 bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow"
         >
           New Thread
@@ -50,6 +61,11 @@ export default function NewThreadButton({ roomSlug }: { roomSlug: string }) {
               placeholder="Optional link (YouTube, Spotify, etc.)"
               className="w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-transparent px-3 py-2 outline-none"
             />
+
+            {err && (
+              <div className="text-sm text-red-600 dark:text-red-400">{err}</div>
+            )}
+
             <div className="flex gap-2 justify-end">
               <button
                 disabled={busy}
