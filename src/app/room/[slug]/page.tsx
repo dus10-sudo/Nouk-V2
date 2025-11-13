@@ -1,46 +1,51 @@
-// src/app/room/[slug]/page.tsx
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getRoomBySlug, getThreadsForRoom } from "@/lib/supabase";
-import ThreadCard from "@/components/ThreadCard";
+import { getRoomBySlug, listThreadsForRoom } from "@/lib/supabase";
 import NewThreadButton from "@/components/NewThreadButton";
+import ThreadCard from "@/components/ThreadCard";
+import { notFound } from "next/navigation";
 
 type Props = { params: { slug: string } };
 
-export const revalidate = 0; // always fresh
+export const revalidate = 5;
 
 export default async function RoomPage({ params }: Props) {
-  const slug = decodeURIComponent(params.slug);
-  const room = await getRoomBySlug(slug);
-
+  const room = await getRoomBySlug(params.slug);
   if (!room) return notFound();
 
-  const threads = await getThreadsForRoom(slug);
+  const threads = await listThreadsForRoom(room);
 
   return (
-    <main className="mx-auto max-w-screen-lg px-4 py-6 space-y-6">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif tracking-tight">{room.name}</h1>
-          <p className="text-sm text-muted-foreground">{room.description}</p>
+          <h1 className="text-3xl font-serif text-stone-900 dark:text-stone-100">
+            {room.name}
+          </h1>
+          {room.description && (
+            <p className="text-stone-600 dark:text-stone-400">{room.description}</p>
+          )}
         </div>
-        <Link href="/" className="text-sm underline hover:opacity-80">
-          ← Rooms
-        </Link>
-      </header>
+        <NewThreadButton roomId={room.id} />
+      </div>
 
-      <section className="space-y-3">
+      <div className="space-y-3">
         {threads.length === 0 ? (
-          <div className="rounded-2xl border bg-card/60 p-6 text-sm text-muted-foreground">
-            No threads yet. Be the first to start something cozy.
+          <div className="rounded-xl border border-dashed border-stone-300 p-6 text-center text-stone-600 dark:border-stone-800 dark:text-stone-400">
+            Quiet for now. Start something gentle.
           </div>
         ) : (
-          threads.map((t) => <ThreadCard key={t.id} thread={t} />)
+          threads.map((t) => (
+            <Link key={t.id} href={`/t/${t.id}`} className="block">
+              <ThreadCard thread={t} />
+            </Link>
+          ))
         )}
-      </section>
+      </div>
 
-      <div className="fixed bottom-5 right-5">
-        <NewThreadButton roomSlug={slug} />
+      <div className="mt-8 text-center">
+        <Link href="/" className="text-stone-600 underline-offset-2 hover:underline dark:text-stone-400">
+          ← Back to rooms
+        </Link>
       </div>
     </main>
   );
