@@ -1,29 +1,51 @@
-import Link from 'next/link';
+'use client';
 
-export default function RoomCard({
-  href, Icon, title, subtitle,
-}: {
-  href: string;
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  title: string;
-  subtitle: string;
-}) {
+import { useRouter } from 'next/navigation';
+import RoomCard from '@/components/RoomCard';
+import {
+  BooksIcon, PotIcon, ClapperIcon, GamepadIcon, ToolboxIcon, DeskIcon,
+} from '@/components/icons';
+
+const ROOMS = [
+  { slug: 'library',   title: 'Library',    subtitle: 'Books, projects, ideas',      Icon: BooksIcon },
+  { slug: 'kitchen',   title: 'Kitchen',    subtitle: 'Recipes, cooking, food talk', Icon: PotIcon },
+  { slug: 'theater',   title: 'Theater',    subtitle: 'Movies & TV',                  Icon: ClapperIcon },
+  { slug: 'game-room', title: 'Game Room',  subtitle: 'Games, music & hobbies',      Icon: GamepadIcon },
+  { slug: 'garage',    title: 'Garage',     subtitle: 'DIY, tools, builds',          Icon: ToolboxIcon },
+  { slug: 'study',     title: 'Study',      subtitle: 'Focus, learning, planning',   Icon: DeskIcon },
+];
+
+export default function Page() {
+  const router = useRouter();
+
   return (
-    <Link href={href} className="block">
-      <div className="bg-card border border-ring rounded-2xl px-4 py-3 shadow-card">
-        <div className="flex items-center gap-4">
-          <div className="size-10 rounded-2xl bg-[color:var(--paper)]/70 border border-ring flex items-center justify-center">
-            <Icon className="w-5 h-5 text-ink/80" />
-          </div>
+    <main className="mx-auto max-w-screen-sm px-4 pb-[calc(env(safe-area-inset-bottom)+120px)]">
+      <h1 className="text-[42px] leading-none tracking-tight text-center font-[var(--font-serif)] pt-10 pb-5">
+        Nouk
+      </h1>
 
-          <div className="min-w-0 flex-1">
-            <div className="room-title font-[var(--font-serif)]">{title}</div>
-            <div className="room-sub text-[15px] mt-[2px] truncate">{subtitle}</div>
-          </div>
+      <div className="space-y-3">
+        {ROOMS.map(({ slug, title, subtitle, Icon }) => (
+          <RoomCard
+            key={slug}
+            href={`/room/${slug}`}
+            Icon={Icon}
+            title={title}
+            subtitle={subtitle}
+          />
+        ))}
+      </div>
 
-          <div className="text-ink/30">›</div>
+      <div className="fixed inset-x-0 bottom-0 z-40">
+        <div className="mx-auto max-w-screen-sm px-4 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-2">
+          <button
+            onClick={() => router.push('/new')}
+            className="w-full rounded-2xl primary text-[17px] font-medium py-4 shadow-soft"
+          >
+            Share a Thought
+          </button>
         </div>
       </div>
-    </Link>
+    </main>
   );
 }
