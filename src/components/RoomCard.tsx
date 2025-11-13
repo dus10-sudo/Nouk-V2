@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import type { ComponentType, SVGProps } from 'react';
 
 export default function RoomCard({
   href, Icon, title, subtitle,
 }: {
   href: string;
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
   title: string;
   subtitle: string;
 }) {
@@ -15,12 +16,10 @@ export default function RoomCard({
           <div className="size-10 rounded-2xl bg-[color:var(--paper)]/70 border border-ring flex items-center justify-center">
             <Icon className="w-5 h-5 text-ink/80" />
           </div>
-
           <div className="min-w-0 flex-1">
             <div className="room-title font-[var(--font-serif)]">{title}</div>
             <div className="room-sub text-[15px] mt-[2px] truncate">{subtitle}</div>
           </div>
-
           <div className="text-ink/30">›</div>
         </div>
       </div>
