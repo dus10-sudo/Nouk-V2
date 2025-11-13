@@ -21,7 +21,7 @@ export default function ShareThought() {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
-  // Close on ESC
+  // Close modal with ESC
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -34,7 +34,7 @@ export default function ShareThought() {
       {/* Docked CTA */}
       <button
         onClick={() => setOpen(true)}
-        className="nouk-cta w-full max-w-[680px] px-6 py-4 text-[18px] font-medium shadow-[0_2px_0_rgba(0,0,0,0.05)]"
+        className="nouk-cta w-full max-w-[680px] px-6 py-4 text-[18px] font-medium rounded-2xl shadow-[0_2px_0_rgba(0,0,0,0.05)] bg-[var(--accent)] text-white active:scale-[0.98] transition-transform"
       >
         Share a Thought
       </button>
@@ -42,19 +42,23 @@ export default function ShareThought() {
       {/* Modal Overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(0,0,0,0.6)] backdrop-blur-[2px] p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center animate-[fadeBackdrop_0.25s_ease-out_forwards] bg-[rgba(0,0,0,0.6)] backdrop-blur-[2px] p-4"
           onClick={() => setOpen(false)}
           aria-modal="true"
           role="dialog"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="animate-[fadeInUp_0.25s_ease-out] w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[var(--ring)] bg-[var(--paper)] p-5 shadow-soft"
+            className="animate-[fadeInUp_0.25s_ease-out] w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[var(--paper)] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
           >
-            <h2 className="mb-1 text-[22px] font-serif">Start a New Nouk</h2>
-            <p className="mb-4 text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
+            <h2 className="mb-1 text-[22px] font-serif text-[var(--ink)]">
+              Start a New Nouk
+            </h2>
+            <p className="mb-4 text-[14px] text-[var(--muted)]">
+              Find your cozy corner.
+            </p>
 
-            {/* Step 1: pick room */}
+            {/* Step 1 */}
             <label className="mb-2 block text-[14px] text-[var(--ink)]">
               1) Where do you want to post?
             </label>
@@ -65,12 +69,11 @@ export default function ShareThought() {
                   <button
                     key={r.slug}
                     onClick={() => setRoom(r)}
-                    className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                    className={`rounded-xl border px-4 py-3 text-left transition-all ${
                       active
-                        ? 'border-[var(--accent)] bg-[var(--card)]'
-                        : 'border-[var(--ring)] bg-[var(--card)]'
+                        ? 'border-[var(--accent)] bg-[var(--card)] shadow-soft'
+                        : 'border-[var(--ring)] bg-[var(--card)] hover:border-[var(--accent)]'
                     }`}
-                    aria-pressed={active}
                   >
                     <div className="font-medium">{r.name}</div>
                     <div className="text-[12px] text-[var(--muted)]">{r.description}</div>
@@ -79,7 +82,7 @@ export default function ShareThought() {
               })}
             </div>
 
-            {/* Step 2: title/link */}
+            {/* Step 2 */}
             <label className="mb-2 block text-[14px] text-[var(--ink)]">
               2) What’s the thread about? (optional link/topic)
             </label>
@@ -87,19 +90,20 @@ export default function ShareThought() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Say something small to start…"
-              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none"
+              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="Optional link (YouTube, Spotify, article…)"
-              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none"
+              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
 
+            {/* Buttons */}
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2"
+                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2 active:scale-[0.97]"
               >
                 Cancel
               </button>
@@ -112,7 +116,7 @@ export default function ShareThought() {
                   setOpen(false);
                 }}
                 disabled={!room}
-                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-white disabled:opacity-60"
+                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-white disabled:opacity-60 active:scale-[0.97]"
               >
                 Start Nouk
               </button>
@@ -122,4 +126,4 @@ export default function ShareThought() {
       )}
     </>
   );
-}
+                }
