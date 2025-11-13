@@ -1,13 +1,20 @@
 // src/lib/supabase.ts
-import sb from './supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 
-// ---- Types that align with your SQL schema ----
+// ---- client ----
+export const sb = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+  { auth: { persistSession: false } }
+);
+
+// ---- types (minimal) ----
 export type Room = {
   id: string;
-  name: string;
   slug: string;
-  description: string | null;
-  created_at: string;
+  title: string;
+  is_active: boolean;
+  description?: string | null;
 };
 
 export type Thread = {
@@ -17,7 +24,9 @@ export type Thread = {
   link_url: string | null;
   created_at: string;
   expires_at: string;
-  // included from join for breadcrumbs
+  last_activity: string | null;
+  is_archived: boolean;
+  // denormalized fields we return from queries:
   room_slug?: string;
   room_name?: string;
 };
@@ -29,85 +38,107 @@ export type Message = {
   created_at: string;
 };
 
-// ---- Rooms ----
+// ---- rooms ----
 export async function listRooms(): Promise<Room[]> {
   const { data, error } = await sb
     .from('rooms')
-    .select('id, name, slug, description, created_at')
-    .order('name', { ascending: true });
+    .select('id, slug, title, is_active, description')
+    .eq('is_active', true)
+    .order('title', { ascending: true });
 
-  if (error) throw new Error(`listRooms: ${error.message}`);
+  if (error) throw new Error(error.message);
   return data ?? [];
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | null> {
   const { data, error } = await sb
     .from('rooms')
-    .select('id, name, slug, description, created_at')
+    .select('id, slug, title, is_active, description')
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw new Error(`getRoomBySlug: ${error.message}`);
+  if (error) return null;
   return data ?? null;
 }
 
-// ---- Threads ----
+// ---- threads ----
+// NOTE: takes a *room slug* (string), because your page calls it that way.
 export async function listThreadsForRoom(roomSlug: string): Promise<Thread[]> {
-  // find room.id first
+  // first get the room id
   const room = await getRoomBySlug(roomSlug);
   if (!room) return [];
 
   const { data, error } = await sb
     .from('threads')
-    .select(`
-      id,
-      room_id,
-      title,
-      link_url,
-      created_at,
-      expires_at
-    `)
+    .select('id, room_id, title, link_url, created_at, expires_at, last_activity, is_archived')
     .eq('room_id', room.id)
+    .eq('is_archived', false)
     .gt('expires_at', new Date().toISOString())
+    .order('last_activity', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });
 
-  if (error) throw new Error(`listThreadsForRoom: ${error.message}`);
+  if (error) throw new Error(error.message);
 
-  // decorate with room fields for UI breadcrumbs
-  const withRoom = (data ?? []).map(t => ({
+  // attach denormalized fields so the UI can breadcrumb without another fetch
+  return (data ?? []).map(t => ({
     ...t,
     room_slug: room.slug,
-    room_name: room.name,
-  })) as Thread[];
+    room_name: room.title,
+  }));
+}
 
-  return withRoom;
+// your NewThreadButton calls: createThread(roomSlug, title, link?)
+export async function createThread(
+  roomSlug: string,
+  title: string,
+  link_url?: string | null
+): Promise<string> {
+  const room = await getRoomBySlug(roomSlug);
+  if (!room) throw new Error('Room not found');
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
+  const { data, error } = await sb
+    .from('threads')
+    .insert({
+      room_id: room.id,
+      title: title.trim(),
+      link_url: link_url ?? null,
+      expires_at: expiresAt,
+      is_archived: false,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data!.id as string;
 }
 
 export async function getThread(id: string): Promise<Thread | null> {
-  // pull thread + also grab room fields in a second call
+  // get thread
   const { data: t, error } = await sb
     .from('threads')
-    .select('id, room_id, title, link_url, created_at, expires_at')
+    .select('id, room_id, title, link_url, created_at, expires_at, last_activity, is_archived')
     .eq('id', id)
-    .single();
-  if (error && error.code !== 'PGRST116') throw new Error(`getThread: ${error.message}`);
-  if (!t) return null;
+    .maybeSingle();
 
-  const { data: r, error: rErr } = await sb
+  if (error || !t) return null;
+
+  // enrich with room fields for breadcrumbs
+  const { data: r } = await sb
     .from('rooms')
-    .select('slug, name')
+    .select('slug, title')
     .eq('id', t.room_id)
-    .single();
-  if (rErr && rErr.code !== 'PGRST116') throw new Error(`getThread(room): ${rErr.message}`);
+    .maybeSingle();
 
   return {
     ...t,
     room_slug: r?.slug,
-    room_name: r?.name,
-  } as Thread;
+    room_name: r?.title,
+  };
 }
 
-// ---- Messages ----
+// ---- messages (a.k.a. replies) ----
+// Your pages import listMessages/addMessage, so we expose those names.
 export async function listMessages(threadId: string): Promise<Message[]> {
   const { data, error } = await sb
     .from('messages')
@@ -115,42 +146,14 @@ export async function listMessages(threadId: string): Promise<Message[]> {
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true });
 
-  if (error) throw new Error(`listMessages: ${error.message}`);
+  if (error) throw new Error(error.message);
   return data ?? [];
 }
 
-export async function addMessage(threadId: string, body: string): Promise<string> {
-  const { data, error } = await sb
-    .from('messages')
-    .insert({ thread_id: threadId, body })
-    .select('id')
-    .single();
-
-  if (error) throw new Error(`addMessage: ${error.message}`);
-  return data!.id as string;
-}
-
-// ---- Create thread (3rd arg is OPTIONAL link) ----
-export async function createThread(
-  roomSlug: string,
-  title: string,
-  link_url?: string | null
-): Promise<string> {
-  const room = await getRoomBySlug(roomSlug);
-  if (!room) throw new Error(`Room not found for slug: ${roomSlug}`);
-
-  const { data, error } = await sb
-    .from('threads')
-    .insert({
-      room_id: room.id,
-      title,
-      link_url: link_url ?? null,
-      // if you didn't set DB default for expires_at:
-      // expires_at: new Date(Date.now() + 24*60*60*1000).toISOString(),
-    })
-    .select('id')
-    .single();
-
-  if (error) throw new Error(`createThread: ${error.message}`);
-  return data!.id as string;
+export async function addMessage(threadId: string, body: string): Promise<void> {
+  const { error } = await sb.from('messages').insert({
+    thread_id: threadId,
+    body: body.trim(),
+  });
+  if (error) throw new Error(error.message);
 }
