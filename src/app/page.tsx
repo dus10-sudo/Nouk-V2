@@ -1,35 +1,66 @@
-import RoomCard from "@/components/RoomCard";
+import RoomCard from '@/components/RoomCard';
+import ShareThoughtButton from '@/components/ShareThoughtButton';
 import {
-  IconLibrary, IconKitchen, IconTheater,
-  IconGame, IconGarage, IconStudy
-} from "@/components/Icons";
-import ShareThoughtButton from "@/components/ShareThoughtButton";
-
-const rooms = [
-  { href: "/r/library", Icon: IconLibrary, title: "Library", subtitle: "Books, projects, ideas" },
-  { href: "/r/kitchen", Icon: IconKitchen, title: "Kitchen", subtitle: "Recipes, cooking, food talk" },
-  { href: "/r/theater", Icon: IconTheater, title: "Theater", subtitle: "Movies & TV" },
-  { href: "/r/game-room", Icon: IconGame, title: "Game Room", subtitle: "Games, music & hobbies" },
-  { href: "/r/garage", Icon: IconGarage, title: "Garage", subtitle: "DIY, tools, builds" },
-  { href: "/r/study", Icon: IconStudy, title: "Study", subtitle: "Focus, learning, planning" },
-];
+  IconLibrary,
+  IconKitchen,
+  IconTheater,
+  IconGame,
+  IconGarage,
+  IconStudy,
+} from '@/components/Icons';
 
 export default function Page() {
   return (
-    <main className="mx-auto max-w-screen-sm px-4 pb-28 pt-10">
-      {/* Spacer above heading to breathe like the mock */}
-      <div className="h-2" />
-      <h1 className="font-display text-display text-center mb-6">Nouk</h1>
+    <main className="mx-auto max-w-[720px] px-4 pb-28">
+      {/* Title */}
+      <header className="pt-6 pb-2 text-center">
+        <h1 className="font-serif text-[56px] leading-[1.02] tracking-[-0.018em]">Nouk</h1>
+      </header>
 
-      <section className="flex flex-col gap-4">
-        {rooms.map((r) => (
-          <RoomCard key={r.title} {...r} />
-        ))}
+      {/* Rooms */}
+      <section className="space-y-3">
+        <RoomCard
+          href="/room/library"
+          Icon={IconLibrary}
+          title="Library"
+          subtitle="Books, projects, ideas"
+        />
+        <RoomCard
+          href="/room/kitchen"
+          Icon={IconKitchen}
+          title="Kitchen"
+          subtitle="Recipes, cooking, food talk"
+        />
+        <RoomCard
+          href="/room/theater"
+          Icon={IconTheater}
+          title="Theater"
+          subtitle="Movies & TV"
+        />
+        <RoomCard
+          href="/room/game-room"
+          Icon={IconGame}
+          title="Game Room"
+          subtitle="Games, music & hobbies"
+        />
+        <RoomCard
+          href="/room/garage"
+          Icon={IconGarage}
+          title="Garage"
+          subtitle="DIY, tools, builds"
+        />
+        <RoomCard
+          href="/room/study"
+          Icon={IconStudy}
+          title="Study"
+          subtitle="Focus, learning, planning"
+        />
       </section>
 
-      <div className="h-6" />
-      <ShareThoughtButton />
-      <div className="h-2" />
+      {/* Docked CTA */}
+      <div className="fixed inset-x-0 bottom-0 flex justify-center px-4 pb-[10px]">
+        <ShareThoughtButton />
+      </div>
     </main>
   );
 }
