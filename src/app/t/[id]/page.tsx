@@ -1,1 +1,42 @@
-import { addReply, getThread, listReplies } from '@/lib/api';import { revalidatePath } from 'next/cache';export const dynamic='force-dynamic';export default async function Page({params}:{params:{id:string}}){const thread=await getThread(params.id);if(!thread)return <div className='app-card p-6'>Thread not found.</div>;const {data:replies}=await listReplies(params.id);async function reply(formData:FormData){'use server';const body=String(formData.get('body')||'').slice(0,500);await addReply(thread.id,body);revalidatePath(`/t/${thread.id}`);}return(<div className='space-y-4'><div className='app-card p-6'><h1 className='text-2xl font-serif mb-1'>{thread.title}</h1><p className='text-sm opacity-70'>Expires {new Date(thread.expires_at).toLocaleString()}</p></div><div className='grid gap-3'>{replies?.map(r=>(<div key={r.id} className='app-card p-3'>{r.body}</div>))||<div className='opacity-60 text-sm'>Be the first to reply.</div>}</div><form action={reply} className='app-card p-3 flex items-center gap-3'><input name='body' placeholder='Write a reply…' required className='flex-1 px-3 py-2 rounded-lg bg-white/70 dark:bg-black/20 border border-black/10 focus-ring'/><button className='px-4 py-2 rounded-lg bg-accent text-white font-medium shadow-soft'>Send</button></form></div>);}
+// src/app/t/[id]/page.tsx
+import { notFound } from "next/navigation";
+import { getThread, listMessages } from "@/lib/supabase";
+import Composer from "@/components/Composer";
+
+type Props = { params: { id: string } };
+
+export const revalidate = 0;
+
+export default async function ThreadView({ params }: Props) {
+  const id = decodeURIComponent(params.id);
+  const thread = await getThread(id);
+  if (!thread) return notFound();
+  const messages = await listMessages(id);
+
+  const expires = new Date(thread.expires_at).toLocaleString();
+
+  return (
+    <main className="mx-auto max-w-screen-md px-4 py-6 space-y-6">
+      <header>
+        <h1 className="text-2xl font-serif">{thread.title}</h1>
+        <p className="text-xs text-muted-foreground">Expires {expires}</p>
+      </header>
+
+      <section className="space-y-3">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className="rounded-2xl border bg-card p-3 text-sm shadow-sm"
+          >
+            {m.body}
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {new Date(m.created_at).toLocaleTimeString()}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <Composer threadId={id} />
+    </main>
+  );
+}
