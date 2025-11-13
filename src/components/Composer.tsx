@@ -1,54 +1,51 @@
 'use client';
 
 import { useState } from 'react';
-import { addMessage } from '@/lib/supabase';
+import { addReply } from '@/server/actions';
 
-type Props = {
-  threadId: string;
-};
+type Props = { threadId: string };
 
 export default function Composer({ threadId }: Props) {
   const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  async function handleSend() {
+  async function onSend() {
     const body = text.trim();
-    if (!body || sending) return;
-
-    setSending(true);
+    if (!body) return;
+    setBusy(true);
+    setErr(null);
     try {
-      await addMessage(threadId, body);
+      await addReply(threadId, body);
       setText('');
+    } catch (e: any) {
+      setErr(e?.message ?? 'Failed to post.');
     } finally {
-      setSending(false);
-    }
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
+      setBusy(false);
     }
   }
 
   return (
-    <div className="sticky bottom-0 flex gap-2 rounded-xl border bg-background p-3">
+    <div className="mt-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-3">
       <textarea
-        className="min-h-[44px] flex-1 resize-none rounded-lg border px-3 py-2 text-sm outline-none"
-        placeholder="Write something kind…"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKeyDown}
+        placeholder="Add a cozy reply…"
+        className="w-full resize-none rounded-xl border border-zinc-300 dark:border-zinc-700
+                   px-3 py-2 outline-none dark:bg-zinc-800 dark:text-white"
+        rows={3}
+        disabled={busy}
       />
-      <button
-        type="button"
-        onClick={handleSend}
-        disabled={sending || !text.trim()}
-        className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        style={{ background: 'var(--accent, #CE6A34)' }} /* burnt orange */
-      >
-        {sending ? 'Sending…' : 'Send'}
-      </button>
+      {err && <p className="text-sm text-red-600 mt-2">{err}</p>}
+      <div className="mt-2 flex justify-end">
+        <button
+          onClick={onSend}
+          disabled={busy || !text.trim()}
+          className="px-4 py-2 rounded-xl bg-orange-600 text-white disabled:opacity-60"
+        >
+          {busy ? 'Sending…' : 'Send'}
+        </button>
+      </div>
     </div>
   );
 }
