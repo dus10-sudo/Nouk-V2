@@ -1,11 +1,7 @@
-// src/components/RoomCard.tsx
 import Link from 'next/link';
 
 export default function RoomCard({
-  href,
-  Icon,
-  title,
-  subtitle,
+  href, Icon, title, subtitle,
 }: {
   href: string;
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -14,15 +10,17 @@ export default function RoomCard({
 }) {
   return (
     <Link href={href} className="block">
-      <div className="card px-5 py-4 rounded-2xl shadow-card border border-[color:var(--ring)] bg-card">
-        <div className="card-row">
-          <div className="size-11 rounded-2xl bg-[color:var(--bg)]/70 flex items-center justify-center border border-[color:var(--ring)]">
-            <Icon className="text-ink/80" />
+      <div className="bg-card border border-ring rounded-2xl px-4 py-3 shadow-card">
+        <div className="flex items-center gap-4">
+          <div className="size-10 rounded-2xl bg-[color:var(--paper)]/70 border border-ring flex items-center justify-center">
+            <Icon className="w-5 h-5 text-ink/80" />
           </div>
+
           <div className="min-w-0 flex-1">
-            <div className="text-[28px] leading-tight font-[var(--font-serif)]">{title}</div>
-            <div className="subtle text-base mt-1 truncate">{subtitle}</div>
+            <div className="room-title font-[var(--font-serif)]">{title}</div>
+            <div className="room-sub text-[15px] mt-[2px] truncate">{subtitle}</div>
           </div>
+
           <div className="text-ink/30">›</div>
         </div>
       </div>
