@@ -35,5 +35,23 @@ export async function getThread(id: string): Promise<ThreadWithRoom | null> {
 
   if (!data) return null;
 
-  return data as ThreadWithRoom;
+  const raw: any = data;
+
+  // Supabase sometimes returns related rows as an array; normalize to a single object or null
+  const roomRaw = raw.room;
+  const roomObj = Array.isArray(roomRaw) ? roomRaw[0] ?? null : roomRaw ?? null;
+
+  const thread: ThreadWithRoom = {
+    id: raw.id,
+    title: raw.title,
+    created_at: raw.created_at,
+    room: roomObj
+      ? {
+          slug: roomObj.slug ?? null,
+          title: roomObj.title ?? null,
+        }
+      : null,
+  };
+
+  return thread;
 }
