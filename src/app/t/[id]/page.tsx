@@ -1,173 +1,98 @@
 // src/app/t/[id]/page.tsx
+
+import { notFound } from "next/navigation";
+import { getThread } from "@/lib/db";
 import Link from "next/link";
-import { addReply } from "@/lib/actions";
-import { getThreadWithRoom, listReplies } from "@/lib/queries";
-import Composer from "@/components/Composer";
 
-type Props = { params: { id: string } };
+export default async function ThreadPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const thread = await getThread(params.id);
 
-export default async function ThreadPage({ params: { id } }: Props) {
-  const thread = await getThreadWithRoom(id);
+  if (!thread) return notFound();
 
-  if (!thread) {
-    return (
-      <main className="min-h-screen bg-paper text-ink">
-        <div className="mx-auto max-w-[720px] px-4 pt-8">
-          <p className="text-[14px] text-[var(--muted)]">Thread not found.</p>
-        </div>
-      </main>
-    );
-  }
-
-  const replies = await listReplies(id);
-
-  const roomHref = thread.room.slug
-    ? ({ pathname: `/room/${thread.room.slug}` } as const)
-    : ({ pathname: "/" } as const);
-
-  const roomLabel = thread.room.name || thread.room.slug || "Room";
+  const roomLabel =
+    thread.room?.name || thread.room?.slug || "Room";
 
   return (
     <main className="min-h-screen bg-paper text-ink">
       <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
+
         {/* Breadcrumb */}
         <div className="mb-2 text-[13px] text-[var(--muted)]">
-          <Link href="/" className="hover:underline">
-            Rooms
-          </Link>
-          {thread.room.slug && (
-            <>
-              <span aria-hidden> › </span>
-              <Link href={roomHref} className="hover:underline">
-                {roomLabel}
-              </Link>
-            </>
-          )}
-          <span aria-hidden> › </span>
-          <span className="text-ink/85">{thread.title}</span>
+          Rooms › {roomLabel} › {thread.title}
         </div>
 
         {/* Header */}
-        <header className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="font-serif text-[26px] leading-[1.1] tracking-[-0.02em]">
-              {thread.title}
-            </h1>
-            <p className="mt-1 text-[13px] text-[var(--muted)]">
-              Started in <span className="font-medium">{roomLabel}</span>. New
-              replies gently fade after quiet hours.
-            </p>
+        <h1 className="text-[32px] font-serif tracking-tight mb-1">
+          {thread.title}
+        </h1>
+
+        <div className="text-[13px] text-[var(--muted)] mb-6">
+          Started in <span className="font-medium">{roomLabel}</span>.  
+          New replies gently fade after quiet hours.
+        </div>
+
+        {/* Seed Card */}
+        <div className="mb-8 rounded-2xl bg-[var(--card)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+          <div className="text-base font-medium mb-1">Seed</div>
+          <div className="text-[15px] leading-snug">
+            {thread.body || "This Nouk will slowly fade if the conversation goes quiet."}
           </div>
-          <span className="shrink-0 rounded-full border border-[var(--stroke)] bg-[var(--badge)] px-3 py-1 text-[11px] text-[var(--muted)]">
-            Living Nouk
-          </span>
-        </header>
 
-        {/* Vine layout */}
-        <section className="relative mt-4 flex-1">
-          {/* central stem */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-[var(--stem)]"
+          {/* 🔗 Optional external link preview (simple for now) */}
+          {thread.link && (
+            <a
+              href={thread.link}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 block text-[14px] text-[var(--accent)] underline"
+            >
+              {thread.link}
+            </a>
+          )}
+        </div>
+
+        {/* Message List */}
+        <div className="flex-1">
+          {thread.replies?.length === 0 && (
+            <p className="text-center text-[14px] text-[var(--muted)]">
+              It's just the seed for now. Add a reply below to let this Nouk grow.
+            </p>
+          )}
+
+          {thread.replies?.map((r) => (
+            <div
+              key={r.id}
+              className="mb-4 rounded-xl bg-[var(--card)] p-4 shadow-sm"
+            >
+              <div className="text-[15px] leading-snug">{r.body}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Reply Box */}
+        <form
+          action={`/api/threads/reply?id=${thread.id}`}
+          method="POST"
+          className="sticky bottom-4 mt-6 rounded-2xl bg-[var(--card)] p-4 shadow-[0_8px_20px_rgba(0,0,0,0.10)]"
+        >
+          <textarea
+            name="body"
+            className="w-full resize-none rounded-xl border border-[var(--border)] bg-transparent p-3 text-[15px] outline-none"
+            placeholder="Write a reply..."
+            rows={3}
+            required
           />
-
-          <ol className="space-y-6">
-            {/* Seed node (thread title) */}
-            <li className="relative flex justify-center">
-              {/* stem node */}
-              <span
-                aria-hidden
-                className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full border border-[var(--stem)] bg-paper shadow-soft"
-              />
-              <div className="mt-5 max-w-[85%] rounded-[20px] border border-[var(--stroke)] bg-[var(--card)] px-4 py-3 text-[14px] leading-relaxed shadow-soft">
-                <div className="text-[13px] font-medium text-[var(--muted)]">
-                  Seed
-                </div>
-                <div className="mt-1 text-[15px] font-semibold text-ink">
-                  {thread.title}
-                </div>
-                <div className="mt-2 text-[12px] text-[var(--muted)]">
-                  This Nouk will slowly fade if the conversation goes quiet.
-                </div>
-              </div>
-            </li>
-
-            {/* Replies as alternating bubbles */}
-            {replies.map((r, index) => {
-              const isLeft = index % 2 === 0;
-
-              return (
-                <li
-                  key={r.id}
-                  className={`relative flex ${
-                    isLeft ? "justify-start" : "justify-end"
-                  }`}
-                >
-                  {/* stem node */}
-                  <span
-                    aria-hidden
-                    className="absolute left-1/2 top-4 h-3 w-3 -translate-x-1/2 rounded-full border border-[var(--stem)] bg-paper shadow-soft"
-                  />
-
-                  {/* connector from node to bubble */}
-                  <span
-                    aria-hidden
-                    className={`absolute top-5 h-px w-5 bg-[var(--stem)] ${
-                      isLeft ? "left-1/2 -translate-x-[2px]" : "right-1/2 translate-x-[2px]"
-                    }`}
-                  />
-
-                  {/* bubble */}
-                  <article
-                    className={`relative max-w-[78%] rounded-[20px] border border-[var(--stroke)] bg-[var(--card-soft)] px-4 py-3 text-[14px] leading-relaxed shadow-soft ${
-                      isLeft ? "ml-7" : "mr-7"
-                    }`}
-                  >
-                    <div className="whitespace-pre-wrap text-ink">
-                      {r.body}
-                    </div>
-                    <div className="mt-2 text-[11px] text-[var(--muted)]">
-                      {new Date(r.created_at).toLocaleString()}
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-
-            {replies.length === 0 && (
-              <li className="relative flex justify-center pt-4">
-                <p className="max-w-[80%] text-center text-[13px] text-[var(--muted)]">
-                  It&apos;s just the seed for now. Add a reply below to let this
-                  Nouk grow.
-                </p>
-              </li>
-            )}
-          </ol>
-        </section>
-
-        {/* Composer */}
-        <section className="mt-8 rounded-[24px] border border-[var(--stroke)] bg-[var(--card)] p-4 shadow-soft">
-          <Composer
-            action={async (text: string) => {
-              "use server";
-              await addReply(id, text);
-            }}
-            {thread.link && (
-  <a
-    href={thread.link}
-    target="_blank"
-    rel="noreferrer"
-    className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--surface)] px-3 py-1 text-[13px] text-[var(--accent)] underline-offset-2 hover:underline"
-  >
-    Open link
-    <span className="truncate max-w-[160px] text-[var(--muted)]">
-      {new URL(thread.link).hostname}
-    </span>
-  </a>
-)}
-
-          />
-        </section>
+          <button
+            type="submit"
+            className="mt-3 float-right rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white"
+          >
+            Send
+          </button>
+        </form>
       </div>
     </main>
   );
