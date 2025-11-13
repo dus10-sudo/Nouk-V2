@@ -1,69 +1,48 @@
-// src/app/page.tsx
-import Link from "next/link";
+'use client';
 
-type Room = {
-  slug: string;
-  name: string;
-  desc: string;
-  icon: string; // emoji
-};
+import React from 'react';
+import Link from 'next/link';
 
-const ROOMS: Room[] = [
-  { slug: "living",  name: "Living Room",  desc: "General chat, low stress",        icon: "🛋️" },
-  { slug: "kitchen", name: "Kitchen",      desc: "Recipes, cooking, food talk",     icon: "🍳" },
-  { slug: "cinema",  name: "Cinema",       desc: "Movies & TV",                      icon: "🎬" },
-  { slug: "library", name: "Library",      desc: "Books, projects, ideas",          icon: "📚" },
-  { slug: "games",   name: "Game Room",    desc: "Games, music & hobbies",          icon: "🎮" },
-  { slug: "lounge",  name: "Lounge",       desc: "Sports & socializing",            icon: "🥤" },
-];
+export default function HomePage() {
+  const rooms = [
+    { slug: 'living-room', name: 'Living Room', description: 'General chat, low stress' },
+    { slug: 'kitchen', name: 'Kitchen', description: 'Recipes, cooking, food talk' },
+    { slug: 'cinema', name: 'Cinema', description: 'Movies & TV' },
+    { slug: 'library', name: 'Library', description: 'Books, projects, ideas' },
+    { slug: 'arcade', name: 'Arcade', description: 'Games, music, hobbies' },
+    { slug: 'lounge', name: 'Lounge', description: 'Sports & socializing' },
+  ];
 
-export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f3efe7] text-stone-900 antialiased">
-      <div className="mx-auto max-w-lg px-4 pt-6 pb-[6.5rem] sm:pt-8">
-        <header className="mb-6 sm:mb-8">
-          <h1 className="text-center font-serif text-3xl sm:text-4xl tracking-tight">
-            Nouk
-          </h1>
-        </header>
+    <main className="min-h-screen bg-[#f3efe7] text-stone-900 flex flex-col justify-between">
+      <div className="flex flex-col items-center px-6 pt-10">
+        <h1 className="text-3xl font-serif mb-1">Nouk</h1>
+        <p className="text-stone-500 text-sm mb-8">
+          Cozy, low-stress conversations — take a breath.
+        </p>
 
-        <ul className="space-y-3 sm:space-y-4">
-          {ROOMS.map((r) => (
-            <li key={r.slug}>
-              <Link
-                href={`/room/${r.slug}`}
-                className="group block rounded-2xl border border-stone-200/70 bg-white/70 backdrop-blur-[2px] px-4 py-4 shadow-[0_1px_0_rgba(0,0,0,0.03)] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/40"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl leading-none select-none">{r.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-serif text-xl">{r.name}</div>
-                    <div className="truncate text-sm text-stone-600">{r.desc}</div>
-                  </div>
-                  <span
-                    aria-hidden
-                    className="ml-2 text-stone-400 transition-transform group-hover:translate-x-0.5"
-                  >
-                    ›
-                  </span>
-                </div>
-              </Link>
-            </li>
+        <div className="w-full max-w-md space-y-4">
+          {rooms.map((room) => (
+            <Link
+              key={room.slug}
+              href={`/room/${room.slug}`}
+              className="block p-4 rounded-2xl border border-stone-200 bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="text-lg font-medium">{room.name}</div>
+              <div className="text-sm text-stone-500">{room.description}</div>
+            </Link>
           ))}
-        </ul>
+        </div>
       </div>
 
-      {/* Bottom sticky action bar (no client handler; just a Link) */}
-      <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#f3efe7] to-[rgba(243,239,231,0.6)] pt-2">
-        <div className="mx-auto max-w-lg px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="rounded-2xl border border-stone-300/70 bg-white/80 backdrop-blur px-3 py-2">
-            <Link
-              href="/t/new"
-              className="block w-full rounded-xl bg-[#e57f5d] px-4 py-3 text-center font-medium text-white shadow hover:opacity-95 active:opacity-90"
-            >
-              Share a thought
-            </Link>
-          </div>
+      <div className="sticky bottom-0 w-full bg-[#f3efe7]/90 backdrop-blur-sm border-t border-stone-200 py-3">
+        <div className="max-w-md mx-auto px-6">
+          <Link
+            href="/compose"
+            className="w-full block text-center bg-stone-800 text-stone-100 font-medium py-3 rounded-xl hover:bg-stone-700 transition"
+          >
+            Share a thought
+          </Link>
         </div>
       </div>
     </main>
