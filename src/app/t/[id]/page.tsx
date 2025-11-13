@@ -1,4 +1,5 @@
 import { getThread } from "@/lib/threads";
+import { getRepliesForThread } from "@/lib/queries";
 import Link from "next/link";
 
 export default async function ThreadPage({
@@ -7,98 +8,103 @@ export default async function ThreadPage({
   params: { id: string };
 }) {
   const thread = await getThread(params.id);
-
   if (!thread) {
     return (
-      <main className="min-h-screen bg-paper text-ink">
-        <div className="mx-auto max-w-[720px] px-4 pt-6">
-          <p className="text-[20px] font-serif">Thread not found.</p>
-        </div>
+      <main className="min-h-screen bg-paper text-ink px-4 py-10">
+        <p>Thread not found.</p>
       </main>
     );
   }
 
-  // Thread fields:
-  const title = thread.title;
-  const created = new Date(thread.created_at).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  const replies = await getRepliesForThread(thread.id);
 
-  // Room data
-  const roomTitle = thread.room.name; // ← FIXED
-  const roomSlug = thread.room.slug;  // ← FIXED
+  const roomName = thread.room?.name ?? thread.room?.slug ?? "Room";
 
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
-
+      <div className="mx-auto max-w-[720px] min-h-screen flex flex-col px-4 pb-24 pt-6">
         {/* Breadcrumb */}
         <div className="mb-2 text-[13px] text-[var(--muted)]">
-          <Link href="/" className="hover:underline">
+          <Link href="/rooms" className="underline">
             Rooms
           </Link>{" "}
           &gt;{" "}
-          <Link href={`/room/${roomSlug}`} className="hover:underline">
-            {roomTitle}
+          <Link href={`/room/${thread.room.slug}`} className="underline">
+            {roomName}
           </Link>{" "}
-          &gt; {title}
+          &gt; {thread.title}
         </div>
 
-        {/* Thread Header */}
-        <h1 className="mb-3 font-serif text-[32px]">{title}</h1>
+        {/* Thread Title */}
+        <h1 className="text-3xl font-semibold mb-1">{thread.title}</h1>
 
-        <div className="mb-4 flex items-center gap-3">
-          <span className="rounded-full border border-[var(--muted)] px-3 py-1 text-[12px]">
-            Living Nouk
-          </span>
+        {/* Status badge */}
+        <div className="inline-flex items-center px-4 py-2 border rounded-full text-sm mb-6">
+          Living Nouk
         </div>
 
         {/* Seed Card */}
-        <div className="rounded-3xl bg-[var(--card)] p-5 shadow-sm">
-          <div className="mb-2 flex items-center gap-2 text-[14px] text-[var(--muted)]">
-            <span className="rounded-full bg-[var(--paper)] px-3 py-1">Seed</span>
-            <span>{created}</span>
+        <div className="rounded-3xl bg-surface p-6 shadow-sm mb-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-3 py-1 rounded-full bg-[var(--surface)] text-[var(--muted)]">
+              Seed
+            </span>
+            <span className="text-[var(--muted)] text-sm">
+              {new Date(thread.created_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
           </div>
 
-          <h2 className="mb-2 font-serif text-[20px]">{title}</h2>
+          <h2 className="font-semibold text-xl mb-2">{thread.title}</h2>
+          <p className="text-[16px] leading-relaxed">{thread.body ?? "This Nouk will slowly fade if the conversation goes quiet."}</p>
 
-          <p className="text-[16px] leading-snug">
-            This Nouk will slowly fade if the conversation goes quiet.
-          </p>
-
-          {/* Optional link preview */}
           {thread.link_url && (
-            <a
-              href={thread.link_url}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-block rounded-xl border border-[var(--accent)] px-4 py-2 text-[var(--accent)]"
-            >
-              {new URL(thread.link_url).hostname}
-            </a>
+            <div className="mt-4">
+              <a
+                href={thread.link_url}
+                className="inline-block px-4 py-2 border border-accent rounded-xl text-accent"
+              >
+                {new URL(thread.link_url).hostname.replace("www.", "")}
+              </a>
+            </div>
           )}
         </div>
 
-        {/* Reply box (coming soon) */}
-        <p className="mt-10 text-center text-[15px] text-[var(--muted)]">
-          It&apos;s just the seed for now. Add a reply below to let this Nouk grow.
-        </p>
+        {/* Replies */}
+        <div className="space-y-6 mb-12">
+          {replies.length === 0 && (
+            <p className="text-center text-[var(--muted)]">
+              It's just the seed for now. Add a reply below to let this Nouk grow.
+            </p>
+          )}
 
-        <div className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-[720px] bg-paper px-4 pb-6 pt-4">
-          <div className="rounded-3xl border border-[var(--accent)] bg-[var(--paper)] p-4 shadow-sm">
-            <textarea
-              className="w-full resize-none bg-transparent text-[16px] text-ink focus:outline-none"
-              placeholder="Write a reply..."
-              disabled
-            ></textarea>
-            <button
-              disabled
-              className="mt-3 float-right cursor-not-allowed text-[var(--muted)]"
+          {replies.map((reply) => (
+            <div
+              key={reply.id}
+              className="rounded-2xl p-5 bg-[var(--surface)] shadow-sm"
             >
-              Send (coming soon)
-            </button>
-          </div>
+              <p className="text-[15px] leading-relaxed">{reply.body}</p>
+              <div className="text-[12px] text-[var(--muted)] mt-2">
+                {new Date(reply.created_at).toLocaleString()}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Reply Box UI (Send disabled for now) */}
+        <div className="rounded-3xl border border-accent/50 p-4 shadow-sm bg-[var(--surface)]">
+          <textarea
+            placeholder="Write a reply..."
+            className="w-full h-24 bg-transparent outline-none resize-none text-[16px]"
+          />
+          <button
+            disabled
+            className="mt-3 text-right w-full text-accent opacity-50"
+          >
+            Send (coming soon)
+          </button>
         </div>
       </div>
     </main>
