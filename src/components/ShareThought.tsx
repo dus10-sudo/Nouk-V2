@@ -21,7 +21,15 @@ export default function ShareThought() {
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
-  // Close modal with ESC
+  // lock body scroll when open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
+  // ESC to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -39,41 +47,34 @@ export default function ShareThought() {
         Share a Thought
       </button>
 
-      {/* Modal Overlay */}
+      {/* Centered modal overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center animate-[fadeBackdrop_0.25s_ease-out_forwards] bg-[rgba(0,0,0,0.6)] backdrop-blur-[2px] p-4"
+          className="fixed inset-0 z-[100] grid place-items-center bg-[rgba(0,0,0,0.55)] backdrop-blur-[2px] p-4"
           onClick={() => setOpen(false)}
-          aria-modal="true"
           role="dialog"
+          aria-modal="true"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="animate-[fadeInUp_0.25s_ease-out] w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[var(--paper)] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+            className="w-full max-w-[560px] max-h-[85vh] overflow-auto rounded-2xl border border-[var(--ring)] bg-[var(--paper)] p-6 shadow-[0_12px_36px_rgba(0,0,0,0.16)]"
           >
-            <h2 className="mb-1 text-[22px] font-serif text-[var(--ink)]">
-              Start a New Nouk
-            </h2>
-            <p className="mb-4 text-[14px] text-[var(--muted)]">
-              Find your cozy corner.
-            </p>
+            <h2 className="mb-1 text-[22px] font-serif text-[var(--ink)]">Start a New Nouk</h2>
+            <p className="mb-4 text-[14px] text-[var(--muted)]">Find your cozy corner.</p>
 
-            {/* Step 1 */}
-            <label className="mb-2 block text-[14px] text-[var(--ink)]">
-              1) Where do you want to post?
-            </label>
-            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-2">
+            <label className="mb-2 block text-[14px]">1) Where do you want to post?</label>
+            <div className="mb-5 grid grid-cols-2 gap-2">
               {ROOM_PRESETS.map((r) => {
                 const active = room?.slug === r.slug;
                 return (
                   <button
                     key={r.slug}
                     onClick={() => setRoom(r)}
-                    className={`rounded-xl border px-4 py-3 text-left transition-all ${
-                      active
-                        ? 'border-[var(--accent)] bg-[var(--card)] shadow-soft'
-                        : 'border-[var(--ring)] bg-[var(--card)] hover:border-[var(--accent)]'
-                    }`}
+                    className={`rounded-xl border px-4 py-3 text-left transition-all
+                      ${active
+                        ? 'border-[var(--accent)] bg-[var(--card)] shadow-[0_6px_18px_rgba(0,0,0,0.08)]'
+                        : 'border-[var(--ring)] bg-[var(--card)] hover:border-[var(--accent)]'}
+                    `}
                   >
                     <div className="font-medium">{r.name}</div>
                     <div className="text-[12px] text-[var(--muted)]">{r.description}</div>
@@ -82,24 +83,20 @@ export default function ShareThought() {
               })}
             </div>
 
-            {/* Step 2 */}
-            <label className="mb-2 block text-[14px] text-[var(--ink)]">
-              2) What’s the thread about? (optional link/topic)
-            </label>
+            <label className="mb-2 block text-[14px]">2) What’s the thread about? (optional link/topic)</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Say something small to start…"
-              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="Optional link (YouTube, Spotify, article…)"
-              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/80 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
 
-            {/* Buttons */}
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setOpen(false)}
@@ -126,4 +123,4 @@ export default function ShareThought() {
       )}
     </>
   );
-                }
+}
