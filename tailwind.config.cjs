@@ -1,27 +1,35 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
-  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        bg: 'var(--bg)',
-        card: 'var(--card)',
-        ink: 'var(--ink)',
-        muted: 'var(--muted)',
-        accent: 'var(--accent)',
-        ring: 'var(--ring)',
-        accentInk: 'var(--accent-ink)',
-      },
-      borderRadius: {
-        '2xl': '1.25rem',
+        // Nouk parchment palette
+        nouk: {
+          bg: "#F3E9D9",        // page parchment
+          card: "#F6EDDF",      // card parchment (slightly lighter)
+          ink: "#3C322B",       // primary text
+          mute: "#7B6D63",      // secondary text
+          edge: "#E7DCCB",      // card border/edge
+          shadow: "#E1D4C2",    // soft card shadow
+          action: "#C97352",    // “Share a Thought” fill
+          actionText: "#FFFFFF"
+        }
       },
       boxShadow: {
-        card: '0 1px 0 rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04)',
-        soft: '0 0 0 1px var(--ring), 0 6px 24px rgba(0,0,0,0.06)',
+        nouk: "0 2px 0 0 #E1D4C2, 0 10px 24px -12px rgba(0,0,0,0.12)"
       },
+      borderRadius: {
+        nouk: "1.25rem" // ~20px
+      },
+      fontSize: {
+        'display': ["40px", { lineHeight: "44px", letterSpacing: "-0.02em" }]
+      }
     },
+    fontFamily: {
+      display: ['"Playfair Display"', "serif"],
+      sans: ['Inter', "system-ui", "Segoe UI", "Roboto", "Arial", "sans-serif"]
+    }
   },
-  plugins: [],
+  plugins: []
 };
-export default config;
