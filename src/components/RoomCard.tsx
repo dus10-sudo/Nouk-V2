@@ -1,27 +1,35 @@
-import Link from 'next/link';
-import type { ComponentType, SVGProps } from 'react';
+import Link from "next/link";
+import { IconChevron } from "./Icons";
 
 export default function RoomCard({
-  href, Icon, title, subtitle,
+  href,
+  Icon,
+  title,
+  subtitle,
 }: {
   href: string;
-  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
   subtitle: string;
 }) {
   return (
-    <Link href={href} className="block">
-      <div className="bg-card border border-ring rounded-2xl px-4 py-3 shadow-card">
-        <div className="flex items-center gap-4">
-          <div className="size-10 rounded-2xl bg-[color:var(--paper)]/70 border border-ring flex items-center justify-center">
-            <Icon className="w-5 h-5 text-ink/80" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="room-title font-[var(--font-serif)]">{title}</div>
-            <div className="room-sub text-[15px] mt-[2px] truncate">{subtitle}</div>
-          </div>
-          <div className="text-ink/30">›</div>
+    <Link
+      href={href}
+      className="block rounded-nouk bg-nouk-card border border-nouk-edge shadow-nouk px-4 py-4 sm:px-5 sm:py-5"
+    >
+      <div className="flex items-center gap-4">
+        <div className="shrink-0 rounded-full bg-white/60 border border-nouk-edge w-14 h-14 grid place-items-center">
+          <Icon className="w-7 h-7 text-nouk-ink" />
         </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-[26px] leading-7 tracking-[-0.01em] text-nouk-ink">
+            {title}
+          </div>
+          <div className="text-[16px] leading-6 text-nouk-mute">
+            {subtitle}
+          </div>
+        </div>
+        <IconChevron className="w-5 h-5 text-nouk-mute/70" />
       </div>
     </Link>
   );
