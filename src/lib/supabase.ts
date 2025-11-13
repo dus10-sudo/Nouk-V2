@@ -42,8 +42,21 @@ export async function getRooms(): Promise<Room[]> {
   return data ?? [];
 }
 
+export async function getRoomBySlug(slug: string): Promise<Room | null> {
+  const { data, error } = await sb
+    .from("rooms")
+    .select("id, slug, name, description")
+    .eq("slug", slug)
+    .single();
+  if (error) {
+    // PGRST116 = row not found
+    if ((error as any).code === "PGRST116") return null;
+    throw error;
+  }
+  return (data as Room) ?? null;
+}
+
 export async function getThreadsForRoom(roomSlug: string): Promise<Thread[]> {
-  // look up the room
   const { data: room, error: roomErr } = await sb
     .from("rooms")
     .select("id")
@@ -55,7 +68,7 @@ export async function getThreadsForRoom(roomSlug: string): Promise<Thread[]> {
     .from("threads")
     .select("id, room_id, title, link_url, created_at, expires_at, is_hot")
     .eq("room_id", room.id)
-    .gt("expires_at", new Date().toISOString()) // not expired
+    .gt("expires_at", new Date().toISOString())
     .order("is_hot", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -69,10 +82,10 @@ export async function getThread(id: string): Promise<Thread | null> {
     .eq("id", id)
     .single();
   if (error) {
-    if ((error as any).code === "PGRST116") return null; // not found
+    if ((error as any).code === "PGRST116") return null;
     throw error;
   }
-  return data ?? null;
+  return (data as Thread) ?? null;
 }
 
 export async function listMessages(threadId: string): Promise<Message[]> {
@@ -93,7 +106,6 @@ export async function createThread(input: {
 }): Promise<string> {
   const { roomSlug, title, link_url = null } = input;
 
-  // find room id
   const { data: room, error: roomErr } = await sb
     .from("rooms")
     .select("id")
@@ -101,7 +113,7 @@ export async function createThread(input: {
     .single();
   if (roomErr) throw roomErr;
 
-  // default 24h expiry handled here to avoid db generation-expression issues
+  // Set expiry in app code (24h) to avoid “generation expression is not immutable”
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await sb
@@ -128,3 +140,10 @@ export async function addMessage(input: {
     .insert({ thread_id: input.threadId, body: input.body });
   if (error) throw error;
 }
+
+// ---------- Aliases to match your pages (so you don't need to edit them) ----------
+export const listRooms = getRooms;
+export const listThreadsForRoom = getThreadsForRoom;
+export async function listThreads(roomSlug: string) {
+  return getThreadsForRoom(roomSlug);
+    }
