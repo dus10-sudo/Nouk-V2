@@ -1,1 +1,27 @@
-module.exports={darkMode:['class','[data-theme="dark"]'],content:['./src/app/**/*.{js,ts,jsx,tsx}','./src/components/**/*.{js,ts,jsx,tsx}'],theme:{extend:{colors:{parchment:'#f8f5ef',charcoal:'#36454F',accent:'#C66B3D',sage:'#5d7f71'},boxShadow:{soft:'0 8px 24px rgba(0,0,0,.08)'},borderRadius:{'2xl':'1.25rem'},keyframes:{'pulse-dot':{'0%,100%':{transform:'scale(1)',opacity:'.5'},'50%':{transform:'scale(1.25)',opacity:'1'}}},animation:{'pulse-dot':'pulse-dot 1.8s ease-in-out infinite'}}},plugins:[]};
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)',
+        card: 'var(--card)',
+        ink: 'var(--ink)',
+        muted: 'var(--muted)',
+        accent: 'var(--accent)',
+        ring: 'var(--ring)',
+        accentInk: 'var(--accent-ink)',
+      },
+      borderRadius: {
+        '2xl': '1.25rem',
+      },
+      boxShadow: {
+        card: '0 1px 0 rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04)',
+        soft: '0 0 0 1px var(--ring), 0 6px 24px rgba(0,0,0,0.06)',
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
