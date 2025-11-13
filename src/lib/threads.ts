@@ -36,5 +36,17 @@ export async function getThread(id: string): Promise<ThreadWithRoom | null> {
 
   if (!data) return null;
 
-  return data as ThreadWithRoom;
+  // Supabase returns `room` as an array → extract first element
+  const roomData = Array.isArray(data.room) ? data.room[0] : data.room;
+
+  return {
+    id: data.id,
+    title: data.title,
+    created_at: data.created_at,
+    link_url: data.link_url,
+    room: {
+      slug: roomData?.slug ?? "",
+      name: roomData?.name ?? "",
+    },
+  };
 }
