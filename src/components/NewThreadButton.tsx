@@ -1,90 +1,101 @@
-// components/NewThreadButton.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createThread } from "@/lib/supabase";
+import { useState } from 'react';
+import { createThread } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function NewThreadButton({ roomSlug }: { roomSlug: string }) {
+type Props = {
+  roomSlug: string;
+};
+
+export default function NewThreadButton({ roomSlug }: Props) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [link, setLink] = useState("");
+  const [title, setTitle] = useState('');
+  const [link, setLink] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleCreate() {
-    if (!title.trim()) return;
+  const reset = () => {
+    setTitle('');
+    setLink('');
+    setOpen(false);
+    setLoading(false);
+  };
+
+  const handleCreate = async () => {
+    const cleanTitle = title.trim();
+    const cleanLink = link.trim() || null;
+
+    if (!cleanTitle) return;
+
     setLoading(true);
     try {
-      const id = await createThread({
-        roomSlug,
-        title: title.trim(),
-        link_url: link.trim() ? link.trim() : null,
-      });
-      setOpen(false);
-      setTitle("");
-      setLink("");
-      router.push(`/t/${id}`);
+      // NOTE: createThread expects positional args:
+      // createThread(roomSlug: string, title: string, link_url?: string | null)
+      const threadId = await createThread(roomSlug, cleanTitle, cleanLink);
+      reset();
+      // navigate to the new thread
+      router.push(`/t/${threadId}`);
     } catch (e) {
-      console.error(e);
-      alert("Failed to create thread.");
-    } finally {
+      console.error('Failed to create thread:', e);
       setLoading(false);
     }
-  }
+  };
 
   return (
     <>
       <button
-        className="rounded-2xl bg-stone-900 px-4 py-2 text-stone-100 shadow-sm transition hover:opacity-90 dark:bg-stone-100 dark:text-stone-900"
+        type="button"
         onClick={() => setOpen(true)}
+        className="fixed bottom-5 right-5 rounded-full px-5 py-3 shadow-lg bg-orange-600 text-white hover:opacity-90 transition"
+        aria-label="Start a new thread"
       >
-        New thread
+        + New
       </button>
 
       {open && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
-          onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
         >
-          <div
-            className="w-full max-w-md rounded-3xl bg-stone-50 p-5 shadow-xl ring-1 ring-black/5 dark:bg-stone-900"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-3 font-serif text-xl">Start a New Nouk</h3>
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-neutral-900">
+            <h2 className="mb-3 text-lg font-semibold">Start a new thread</h2>
 
-            <label className="mb-1 block text-sm opacity-70">Title</label>
+            <label className="mb-2 block text-sm opacity-80">Title</label>
             <input
-              className="mb-3 w-full rounded-xl border border-stone-300 bg-white p-2 outline-none focus:ring-2 focus:ring-amber-400 dark:border-stone-700 dark:bg-stone-800"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="What’s this thread about?"
+              placeholder="What’s the vibe?"
+              className="mb-4 w-full rounded-xl border px-3 py-2 dark:bg-neutral-800 dark:border-neutral-700"
             />
 
-            <label className="mb-1 block text-sm opacity-70">
-              Optional link (YouTube, Spotify…)
+            <label className="mb-2 block text-sm opacity-80">
+              Optional link (YouTube, Spotify, etc.)
             </label>
             <input
-              className="mb-4 w-full rounded-xl border border-stone-300 bg-white p-2 outline-none focus:ring-2 focus:ring-amber-400 dark:border-stone-700 dark:bg-stone-800"
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="https://…"
+              className="mb-6 w-full rounded-xl border px-3 py-2 dark:bg-neutral-800 dark:border-neutral-700"
             />
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-3">
               <button
-                className="rounded-xl px-3 py-2 text-sm opacity-70 hover:opacity-100"
-                onClick={() => setOpen(false)}
+                type="button"
+                onClick={reset}
+                className="rounded-xl px-4 py-2 text-sm hover:underline"
                 disabled={loading}
               >
                 Cancel
               </button>
               <button
-                className="rounded-xl bg-amber-500 px-3 py-2 text-sm text-white shadow hover:brightness-95 disabled:opacity-60"
+                type="button"
                 onClick={handleCreate}
                 disabled={loading || !title.trim()}
+                className="rounded-xl bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50"
               >
-                {loading ? "Starting…" : "Start Nouk"}
+                {loading ? 'Creating…' : 'Create'}
               </button>
             </div>
           </div>
