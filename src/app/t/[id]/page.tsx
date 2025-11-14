@@ -58,7 +58,9 @@ export default async function ThreadPage({
           </div>
 
           <h2 className="font-semibold text-xl mb-2">{thread.title}</h2>
-          <p className="text-[16px] leading-relaxed">{thread.body ?? "This Nouk will slowly fade if the conversation goes quiet."}</p>
+          <p className="text-[16px] leading-relaxed">
+            This Nouk will slowly fade if the conversation goes quiet.
+          </p>
 
           {thread.link_url && (
             <div className="mt-4">
@@ -76,37 +78,4 @@ export default async function ThreadPage({
         <div className="space-y-6 mb-12">
           {replies.length === 0 && (
             <p className="text-center text-[var(--muted)]">
-              It's just the seed for now. Add a reply below to let this Nouk grow.
-            </p>
-          )}
-
-          {replies.map((reply) => (
-            <div
-              key={reply.id}
-              className="rounded-2xl p-5 bg-[var(--surface)] shadow-sm"
-            >
-              <p className="text-[15px] leading-relaxed">{reply.body}</p>
-              <div className="text-[12px] text-[var(--muted)] mt-2">
-                {new Date(reply.created_at).toLocaleString()}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Reply Box UI (Send disabled for now) */}
-        <div className="rounded-3xl border border-accent/50 p-4 shadow-sm bg-[var(--surface)]">
-          <textarea
-            placeholder="Write a reply..."
-            className="w-full h-24 bg-transparent outline-none resize-none text-[16px]"
-          />
-          <button
-            disabled
-            className="mt-3 text-right w-full text-accent opacity-50"
-          >
-            Send (coming soon)
-          </button>
-        </div>
-      </div>
-    </main>
-  );
-}
+              It's just the seed for now.
