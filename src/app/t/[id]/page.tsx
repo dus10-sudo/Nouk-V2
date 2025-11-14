@@ -1,16 +1,14 @@
 // src/app/t/[id]/page.tsx
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, cookies } from "next/headers";
 import { getThreadWithReplies } from "@/lib/threads";
 import { addReply } from "@/lib/actions";
+import { aliasFromToken } from "@/lib/alias";
 
-type ThreadPageProps = {
-  params: { id: string };
-};
+type ThreadPageProps = { params: { id: string } };
 
 export default async function ThreadPage({ params }: ThreadPageProps) {
   const thread = await getThreadWithReplies(params.id);
-
   if (!thread) {
     return (
       <main className="min-h-screen bg-paper text-ink">
@@ -22,13 +20,14 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   }
 
   const roomName = thread.room.name || thread.room.slug || "Room";
+  const cookieStore = cookies();
+  const myToken = cookieStore.get("nouk_user_token")?.value ?? null;
 
   // Server action for posting a reply
   async function handleReply(formData: FormData) {
     "use server";
     const body = (formData.get("body") as string | null)?.trim();
     if (!body) return;
-
     await addReply(thread.id, body);
     revalidatePath(`/t/${thread.id}`);
   }
@@ -38,9 +37,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
       <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
         {/* Breadcrumb */}
         <div className="mb-2 text-[13px] text-[var(--muted)]">
-          <Link href="/" className="hover:underline">
-            Rooms
-          </Link>
+          <Link href="/" className="hover:underline">Rooms</Link>
           {" › "}
           <Link href={`/room/${thread.room.slug}`} className="hover:underline">
             {roomName}
@@ -54,14 +51,8 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           <h1 className="font-serif text-[32px] leading-tight tracking-[-0.03em] text-[var(--ink-strong)]">
             {thread.title}
           </h1>
-
-          {/* Quiet presence indicator + pill */}
-          <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-            </span>
-            <span>Living Nouk</span>
+          <div className="rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            Living Nouk
           </div>
         </div>
 
@@ -104,24 +95,35 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         <section className="flex flex-1 flex-col gap-3">
           {thread.replies.length === 0 ? (
             <p className="text-center text-[14px] text-[var(--muted)]">
-              It&apos;s just the seed for now. Add a reply below to let this
-              Nouk grow.
+              It&apos;s just the seed for now. Add a reply below to let this Nouk grow.
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {thread.replies.map((reply) => (
-                <div
-                  key={reply.id}
-                  className="transform rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)] transition-transform duration-150 hover:-translate-y-[1px]"
-                >
-                  <p className="mb-2 text-[15px] leading-relaxed text-[var(--ink-soft)]">
-                    {reply.body}
-                  </p>
-                  <p className="text-right text-[12px] text-[var(--muted)]">
-                    {new Date(reply.created_at).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+              {thread.replies.map((r) => {
+                const isMine = myToken && r.user_token && myToken === r.user_token;
+                const alias = isMine
+                  ? "You"
+                  : aliasFromToken(r.user_token ?? "nouk-anon");
+
+                return (
+                  <div
+                    key={r.id}
+                    className="rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)] animate-in-reply"
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-[var(--muted-strong)]">
+                        {alias}
+                      </span>
+                      <span className="text-[12px] text-[var(--muted)]">
+                        {new Date(r.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[15px] leading-relaxed text-[var(--ink-soft)] whitespace-pre-wrap">
+                      {r.body}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
