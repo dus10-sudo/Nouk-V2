@@ -3,14 +3,7 @@
 import Link from "next/link";
 import RoomCard from "@/components/RoomCard";
 import Logo from "@/components/Logo";
-import {
-  IconLibrary,
-  IconLounge,
-  IconStudio,
-  IconTheater,
-  IconGame,
-  IconCafe,
-} from "@/components/Icons";
+import { IconLibrary, IconTheater, IconGame } from "@/components/Icons";
 
 export default function HomePage() {
   return (
@@ -88,13 +81,13 @@ export default function HomePage() {
             />
             <RoomCard
               href="/room/lounge"
-              icon={IconLounge}
+              icon={IconLibrary}
               title="Lounge"
               subtitle="Soft check-ins, daily life"
             />
             <RoomCard
               href="/room/studio"
-              icon={IconStudio}
+              icon={IconLibrary}
               title="Studio"
               subtitle="Creative work & drafts"
             />
@@ -112,7 +105,7 @@ export default function HomePage() {
             />
             <RoomCard
               href="/room/cafe"
-              icon={IconCafe}
+              icon={IconLibrary}
               title="Café"
               subtitle="Open table, anything goes"
             />
