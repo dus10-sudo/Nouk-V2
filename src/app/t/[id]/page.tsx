@@ -1,6 +1,7 @@
 // src/app/t/[id]/page.tsx
 import Link from "next/link";
-import { revalidatePath, cookies } from "next/headers";
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { getThreadWithReplies } from "@/lib/threads";
 import { addReply } from "@/lib/actions";
 import { aliasFromToken } from "@/lib/alias";
@@ -28,6 +29,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
     "use server";
     const body = (formData.get("body") as string | null)?.trim();
     if (!body) return;
+
     await addReply(thread.id, body);
     revalidatePath(`/t/${thread.id}`);
   }
@@ -37,7 +39,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
       <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
         {/* Breadcrumb */}
         <div className="mb-2 text-[13px] text-[var(--muted)]">
-          <Link href="/" className="hover:underline">Rooms</Link>
+          <Link href="/" className="hover:underline">
+            Rooms
+          </Link>
           {" › "}
           <Link href={`/room/${thread.room.slug}`} className="hover:underline">
             {roomName}
