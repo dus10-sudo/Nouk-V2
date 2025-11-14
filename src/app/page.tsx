@@ -3,7 +3,11 @@
 import Link from "next/link";
 import RoomCard from "@/components/RoomCard";
 import Logo from "@/components/Logo";
-import { IconLibrary, IconTheater, IconGame } from "@/components/Icons";
+import {
+  IconLibrary,
+  IconTheater,
+  IconGame,
+} from "@/components/Icons";
 
 export default function HomePage() {
   return (
@@ -75,37 +79,37 @@ export default function HomePage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <RoomCard
               href="/room/library"
-              icon={IconLibrary}
+              Icon={IconLibrary}
               title="Library"
               subtitle="Books, projects, ideas"
             />
             <RoomCard
               href="/room/lounge"
-              icon={IconLibrary}
+              Icon={IconLibrary}
               title="Lounge"
               subtitle="Soft check-ins, daily life"
             />
             <RoomCard
               href="/room/studio"
-              icon={IconLibrary}
+              Icon={IconLibrary}
               title="Studio"
               subtitle="Creative work & drafts"
             />
             <RoomCard
               href="/room/theater"
-              icon={IconTheater}
+              Icon={IconTheater}
               title="Theater"
               subtitle="Movies, shows, deep dives"
             />
             <RoomCard
               href="/room/game-room"
-              icon={IconGame}
+              Icon={IconGame}
               title="Game Room"
               subtitle="Games, streams, silly stuff"
             />
             <RoomCard
               href="/room/cafe"
-              icon={IconLibrary}
+              Icon={IconLibrary}
               title="Café"
               subtitle="Open table, anything goes"
             />
