@@ -1,25 +1,37 @@
 // src/app/room/[slug]/page.tsx
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   getRoomBySlug,
   listThreads,
-  createThread,
   type Room,
   type Thread,
 } from '@/lib/supabase';
 
+function isExpired(thread: Thread): boolean {
+  const expires = (thread as any).expires_at as string | null | undefined;
+  const is_archived = (thread as any).is_archived as boolean | undefined;
+
+  if (is_archived) return true;
+  if (!expires) return false;
+
+  return new Date(expires) < new Date();
+}
+
+function isFadingSoon(thread: Thread): boolean {
+  const expires = (thread as any).expires_at as string | null | undefined;
+  if (!expires) return false;
+
+  const diffMs = new Date(expires).getTime() - Date.now();
+  const threeHoursMs = 3 * 60 * 60 * 1000;
+  return diffMs > 0 && diffMs <= threeHoursMs;
+}
+
 export default function RoomPage() {
   const { slug } = useParams<{ slug: string }>();
-  const router = useRouter();
-  const search = useSearchParams();
-
-  const pendingCreate = useRef(false);
-  const titleQP = search.get('title')?.trim() ?? '';
-  const linkQP = search.get('link')?.trim() ?? '';
 
   const [room, setRoom] = useState<Room | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -36,9 +48,9 @@ export default function RoomPage() {
         setRoom(r);
 
         if (r) {
-          const t = await listThreads(r.id);
+          const list = await listThreads(r.id);
           if (!alive) return;
-          setThreads(t);
+          setThreads(list);
         }
       } finally {
         if (alive) setLoading(false);
@@ -50,42 +62,18 @@ export default function RoomPage() {
     };
   }, [slug]);
 
-  // If we came from Share modal with ?title/link, auto-create then redirect
-  useEffect(() => {
-    if (!room) return;
+  const visibleThreads = useMemo(() => {
+    const active = threads.filter((t) => !isExpired(t));
 
-    const hasCreateParams = titleQP.length > 0 || linkQP.length > 0;
-    if (!hasCreateParams || pendingCreate.current) return;
+    // Sort by last_activity desc (fall back to created_at)
+    return active.slice().sort((a, b) => {
+      const aLast = (a as any).last_activity ?? a.created_at;
+      const bLast = (b as any).last_activity ?? b.created_at;
+      return new Date(bLast).getTime() - new Date(aLast).getTime();
+    });
+  }, [threads]);
 
-    pendingCreate.current = true;
-
-    (async () => {
-      try {
-        const id = await createThread(room.slug, titleQP, linkQP || null);
-
-        // Clean URL and go to new thread
-        const clean = new URL(window.location.href);
-        clean.searchParams.delete('title');
-        clean.searchParams.delete('link');
-
-        router.replace(`/t/${id}`); // 👈 IMPORTANT: use /t, not /thread
-      } catch (err) {
-        console.error('Error auto-creating thread', err);
-        // If creation fails, just remove QPs so we don't loop
-        const clean = new URL(window.location.href);
-        clean.searchParams.delete('title');
-        clean.searchParams.delete('link');
-        router.replace(clean.pathname);
-        pendingCreate.current = false;
-      }
-    })();
-  }, [room, titleQP, linkQP, router]);
-
-  // header crumbs text
-  const crumbs = useMemo(
-    () => (room ? `Rooms › ${room.title ?? room.slug}` : 'Rooms'),
-    [room]
-  );
+  const crumbs = room ? `Rooms › ${room.title ?? room.slug}` : 'Rooms';
 
   return (
     <main className="mx-auto max-w-[720px] px-4 pb-20">
@@ -102,45 +90,57 @@ export default function RoomPage() {
             {room?.description ?? ''}
           </p>
         </div>
+        {/* intentionally no "New Thread" button here */}
       </header>
 
-      {/* Threads */}
+      {/* Content */}
       {loading ? (
         <div className="mt-10 text-[var(--muted)]">Loading…</div>
-      ) : threads.length === 0 ? (
+      ) : visibleThreads.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-6 text-[var(--muted)] shadow-[var(--soft)]">
-          It&apos;s quiet in here.
-          <br />
-          No Nouks yet in this room. Start one from the home screen&apos;s{' '}
-          <span className="font-medium">Share a Thought</span> button and it
-          will appear here as a little stem.
+          It’s quiet in here. Start a Nouk for this room from the home screen’s{' '}
+          <span className="font-medium">Start a Nouk</span> button.
         </div>
       ) : (
         <ul className="mt-4 space-y-3">
-          {threads.map((t) => (
-            <li key={t.id}>
-              <Link
-                href={`/t/${t.id}`}
-                className="block rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-4 shadow-[var(--shadow)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-shadow"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="font-medium text-[18px] leading-tight">
-                      {t.title}
+          {visibleThreads.map((t) => {
+            const fadingSoon = isFadingSoon(t);
+            const postsCount = (t as any).posts_count as number | undefined;
+
+            return (
+              <li key={t.id}>
+                <Link
+                  href={`/t/${t.id}`}
+                  className="block rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-4 shadow-[var(--shadow)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h2 className="truncate text-[18px] font-medium leading-tight">
+                          {t.title}
+                        </h2>
+                        {fadingSoon && (
+                          <span className="shrink-0 rounded-full border border-[var(--accent)]/35 bg-[var(--accent)]/5 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--accent)]">
+                            fading soon
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-[13px] text-[var(--muted)]">
+                        {(postsCount ?? 0)}{' '}
+                        {postsCount === 1 ? 'reply' : 'replies'} · updated{' '}
+                        {new Date(
+                          ((t as any).last_activity as string) ?? t.created_at
+                        ).toLocaleDateString()}
+                      </div>
                     </div>
-                    <div className="text-[13px] text-[var(--muted)] mt-1">
-                      {t.posts_count ?? 0}{' '}
-                      {t.posts_count === 1 ? 'post' : 'posts'}
-                      {' · '}
-                      updated{' '}
-                      {new Date(t.last_activity).toLocaleDateString()}
+                    <div className="mt-1 shrink-0 text-[18px] opacity-40">
+                      ›
                     </div>
                   </div>
-                  <div className="opacity-40">›</div>
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>
