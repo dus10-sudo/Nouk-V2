@@ -1,74 +1,43 @@
-"use client";
-
+// src/components/RoomCard.tsx
 import Link from "next/link";
-import {
-  IconLibrary,
-  IconKitchen,
-  IconTheater,
-  IconGame,
-  IconGarage,
-  IconStudy,
-  IconChevron,
-} from "@/components/Icons";
+import type { ComponentType } from "react";
 
-type RoomCardProps = {
+type IconComponent = ComponentType<{ className?: string }>;
+
+export type RoomCardProps = {
   href: string;
-  icon: string; // string name instead of function
+  Icon: IconComponent;
   title: string;
   subtitle: string;
 };
 
-// Icon lookup to keep everything serializable
-const icons = {
-  library: IconLibrary,
-  kitchen: IconKitchen,
-  theater: IconTheater,
-  game: IconGame,
-  garage: IconGarage,
-  study: IconStudy,
-} as const;
-
-export default function RoomCard({ href, icon, title, subtitle }: RoomCardProps) {
-  const IconComponent = icons[icon as keyof typeof icons];
-
+export default function RoomCard({
+  href,
+  Icon,
+  title,
+  subtitle,
+}: RoomCardProps) {
   return (
-    <Link
-      href={href}
-      className="
-        flex items-center justify-between 
-        w-full rounded-3xl px-6 py-5
-        bg-[var(--card-bg)] 
-        shadow-sm 
-        border border-[var(--card-border)] 
-        hover:bg-[var(--card-hover)] 
-        active:scale-[0.99] 
-        transition-all
-      "
-    >
-      <div className="flex items-center gap-4">
+    <Link href={href} className="block group">
+      <div className="flex items-center gap-4 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.16)] transition-all group-hover:border-[var(--accent-soft)] group-hover:shadow-[0_22px_55px_rgba(15,23,42,0.22)]">
         {/* Icon bubble */}
-        <div
-          className="
-            h-12 w-12 rounded-full 
-            bg-white/70 
-            flex items-center justify-center 
-            shadow-sm
-          "
-        >
-          {IconComponent && (
-            <IconComponent className="h-6 w-6 text-[var(--icon)] stroke-[2.2]" />
-          )}
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--paper)] shadow-[0_10px_25px_rgba(15,23,42,0.12)]">
+          <Icon className="h-6 w-6 text-[var(--accent-strong)]" />
         </div>
 
-        {/* Label text */}
-        <div className="flex flex-col">
-          <span className="text-lg font-semibold text-[var(--text)]">{title}</span>
-          <span className="text-sm text-[var(--subtext)]">{subtitle}</span>
+        {/* Text */}
+        <div className="flex flex-1 flex-col">
+          <span className="text-[16px] font-semibold text-[var(--ink-strong)]">
+            {title}
+          </span>
+          <span className="text-[13px] text-[var(--muted)]">{subtitle}</span>
+        </div>
+
+        {/* Chevron */}
+        <div className="text-[20px] text-[var(--muted)] group-hover:text-[var(--accent-strong)]">
+          ›
         </div>
       </div>
-
-      {/* Chevron */}
-      <IconChevron className="h-5 w-5 text-[var(--chevron)] stroke-[2.2]" />
     </Link>
   );
 }
