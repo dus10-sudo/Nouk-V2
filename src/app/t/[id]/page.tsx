@@ -142,21 +142,27 @@ export default async function ThreadPage({ params: { id } }: PageProps) {
         </section>
 
         {/* Reply form */}
-        <section className="mt-5">
-          <form
-            action={submitReply}
-            className="rounded-3xl border border-accent/50 bg-[var(--surface)] p-4 shadow-sm"
-          >
-            <textarea
-              name="body"
-              placeholder="Write a reply…"
-              className="h-24 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none"
-            />
-            <div className="mt-3 flex justify-end">
-              <button
-                type="submit"
-                className="rounded-full bg-accent px-4 py-1.5 text-[14px] font-medium text-white shadow-sm active:scale-[0.98]"
-              >
+<section className="mt-5">
+  <form
+    key={replies.length}               // 👈 add this line
+    action={submitReply}
+    className="rounded-3xl border border-accent/50 bg-[var(--surface)] p-4 shadow-sm"
+  >
+    <textarea
+      name="body"
+      placeholder="Write a reply…"
+      className="h-24 w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none"
+    />
+    <div className="mt-3 flex justify-end">
+      <button
+        type="submit"
+        className="rounded-full bg-accent px-4 py-1.5 text-[14px] font-medium text-white shadow-sm active:scale-[0.98]"
+      >
+        Send
+      </button>
+    </div>
+  </form>
+</section>
                 Send
               </button>
             </div>
