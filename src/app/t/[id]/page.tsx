@@ -55,8 +55,13 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             {thread.title}
           </h1>
 
-          <div className="rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
-            Living Nouk
+          {/* Quiet presence indicator + pill */}
+          <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+            </span>
+            <span>Living Nouk</span>
           </div>
         </div>
 
@@ -107,7 +112,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
               {thread.replies.map((reply) => (
                 <div
                   key={reply.id}
-                  className="rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
+                  className="transform rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)] transition-transform duration-150 hover:-translate-y-[1px]"
                 >
                   <p className="mb-2 text-[15px] leading-relaxed text-[var(--ink-soft)]">
                     {reply.body}
