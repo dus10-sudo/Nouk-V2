@@ -1,29 +1,24 @@
 // src/lib/threads.ts
 import { supabase } from "./supabase";
 
-export type ThreadWithRoom = {
+export type ReplyRow = {
+  id: string;
+  thread_id: string;
+  body: string;
+  user_token: string | null;
+  created_at: string;
+};
+
+export type ThreadWithReplies = {
   id: string;
   title: string;
   created_at: string;
   link_url: string | null;
-  room: {
-    slug: string;
-    name: string;
-  };
+  room: { slug: string; name: string };
+  replies: ReplyRow[];
 };
 
-export type ThreadReply = {
-  id: string;
-  body: string;
-  created_at: string;
-};
-
-export type ThreadWithReplies = ThreadWithRoom & {
-  replies: ThreadReply[];
-};
-
-// Fetch a single thread (used by some pages)
-export async function getThread(id: string): Promise<ThreadWithRoom | null> {
+export async function getThreadWithReplies(id: string): Promise<ThreadWithReplies | null> {
   const { data, error } = await supabase
     .from("threads")
     .select(
@@ -35,20 +30,26 @@ export async function getThread(id: string): Promise<ThreadWithRoom | null> {
         room:room_id (
           slug,
           name
+        ),
+        replies:replies (
+          id,
+          thread_id,
+          body,
+          user_token,
+          created_at
         )
       `
     )
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    console.error("Error fetching thread:", error);
+    console.error("getThreadWithReplies error:", error);
     return null;
   }
-
   if (!data) return null;
 
-  // Supabase returns `room` as an array when using foreign-table syntax
+  // Supabase returns `room` as array; normalize to object
   const roomData = Array.isArray(data.room) ? data.room[0] : data.room;
 
   return {
@@ -60,30 +61,6 @@ export async function getThread(id: string): Promise<ThreadWithRoom | null> {
       slug: roomData?.slug ?? "",
       name: roomData?.name ?? "",
     },
-  };
-}
-
-// Fetch thread + its replies
-export async function getThreadWithReplies(
-  id: string
-): Promise<ThreadWithReplies | null> {
-  const base = await getThread(id);
-  if (!base) return null;
-
-  const { data: repliesData, error: repliesError } = await supabase
-    .from("replies")
-    .select("id, body, created_at")
-    .eq("thread_id", id)
-    .order("created_at", { ascending: true });
-
-  if (repliesError) {
-    console.error("Error fetching replies:", repliesError);
-  }
-
-  const replies = (repliesData ?? []) as ThreadReply[];
-
-  return {
-    ...base,
-    replies,
+    replies: Array.isArray(data.replies) ? data.replies : [],
   };
 }
