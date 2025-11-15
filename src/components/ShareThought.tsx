@@ -4,7 +4,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getOrCreateUserToken } from '@/lib/userToken';
 
 type Room = {
   id: string;
@@ -67,6 +66,29 @@ const ROOM_META: Record<
     blurb: 'Quiet prompts, journaling, and thoughtful writing.',
   },
 };
+
+// Local helper: create or reuse an anonymous user token in localStorage
+function getOrCreateUserToken(): string {
+  if (typeof window === 'undefined') {
+    // Should never actually be used server-side, but keeps TS happy
+    return '';
+  }
+
+  const KEY = 'nouk_user_token';
+  let token = window.localStorage.getItem(KEY);
+
+  if (!token) {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      token = crypto.randomUUID();
+    } else {
+      // Fallback: very simple random string
+      token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+    window.localStorage.setItem(KEY, token);
+  }
+
+  return token;
+}
 
 function normalizeSlug(room: Room): string {
   if (room.slug) return room.slug;
@@ -244,7 +266,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
               </button>
             </div>
 
-            {/* Room selector – Option A (vertical cards with micro-descriptions) */}
+            {/* Room selector – vertical cards with micro-descriptions */}
             <div className="mb-3">
               <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
                 1) Where do you want to post?
