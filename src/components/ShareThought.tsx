@@ -282,3 +282,15 @@ export default function ShareThoughtButton() {
     </>
   );
                   }
+export default function ShareThoughtButton({ compact = false }) {
+  return (
+    <button
+      className={`w-full rounded-[24px] bg-[var(--cta)] text-[var(--cta-ink)] font-medium transition-all shadow-soft-lg
+        ${compact ? "py-3 text-[15px]" : "py-4 text-[16px]"}
+      `}
+      onClick={openModal}
+    >
+      Share a Thought
+    </button>
+  );
+}
