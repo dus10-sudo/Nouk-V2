@@ -1,18 +1,10 @@
-"use client";
+// src/components/ShareThought.tsx
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase-browser";
-
-// Order to display rooms in the picker
-const ROOM_SLUG_ORDER = [
-  "sunroom",
-  "living-room",
-  "garden",
-  "lantern-room",
-  "observatory",
-  "library",
-];
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { getOrCreateUserToken } from '@/lib/userToken';
 
 type Room = {
   id: string;
@@ -29,20 +21,56 @@ type FormState = {
   error: string | null;
 };
 
-// Simple browser-side token helper so each browser gets a stable anonymous id
-function getOrCreateUserToken(): string {
-  if (typeof window === "undefined") {
-    // SSR fallback – not really used, but keeps types happy
-    return crypto.randomUUID();
-  }
+// Canonical order for rooms (by slug)
+const ROOM_SLUG_ORDER = [
+  'sunroom',
+  'living-room',
+  'garden',
+  'lantern-room',
+  'observatory',
+  'library',
+];
 
-  const STORAGE_KEY = "nouk_user_token";
-  const existing = window.localStorage.getItem(STORAGE_KEY);
-  if (existing) return existing;
+// Canonical display meta for each room (Option A)
+const ROOM_META: Record<
+  string,
+  { icon: string; label: string; blurb: string }
+> = {
+  'sunroom': {
+    icon: '🌤️',
+    label: 'Sunroom',
+    blurb: 'Light, everyday check-ins and passing thoughts.',
+  },
+  'living-room': {
+    icon: '🛋️',
+    label: 'Living Room',
+    blurb: 'Cozy conversation and shared moments with others.',
+  },
+  'garden': {
+    icon: '🌿',
+    label: 'Garden',
+    blurb: 'Gentle growth, intentions, and small steps forward.',
+  },
+  'lantern-room': {
+    icon: '🔮',
+    label: 'Lantern Room',
+    blurb: 'Heavier feelings and emotional processing in a safe glow.',
+  },
+  'observatory': {
+    icon: '🌙',
+    label: 'Observatory',
+    blurb: 'Late-night thoughts, wonder, and abstract ideas.',
+  },
+  'library': {
+    icon: '📖',
+    label: 'Library',
+    blurb: 'Quiet prompts, journaling, and thoughtful writing.',
+  },
+};
 
-  const fresh = crypto.randomUUID();
-  window.localStorage.setItem(STORAGE_KEY, fresh);
-  return fresh;
+function normalizeSlug(room: Room): string {
+  if (room.slug) return room.slug;
+  return room.name.toLowerCase().replace(/\s+/g, '-');
 }
 
 export default function ShareThoughtButton({ compact = false }: { compact?: boolean }) {
@@ -51,8 +79,8 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<FormState>({
     roomSlug: null,
-    title: "",
-    link: "",
+    title: '',
+    link: '',
     submitting: false,
     error: null,
   });
@@ -63,19 +91,27 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
 
     async function loadRooms() {
       const { data, error } = await supabase
-        .from("rooms")
-        .select("id, slug, name, description");
+        .from('rooms')
+        .select('id, slug, name, description');
 
       if (error) {
-        console.error("[ShareThought] Error loading rooms", error);
+        console.error('[ShareThought] Error loading rooms', error);
         return;
       }
 
       if (!data || cancelled) return;
 
-      const ordered = [...data].sort((a, b) => {
-        const ia = ROOM_SLUG_ORDER.indexOf(a.slug);
-        const ib = ROOM_SLUG_ORDER.indexOf(b.slug);
+      // Normalize & order rooms according to our canonical order
+      const withSlugs = data.map((room) => ({
+        ...room,
+        slug: room.slug || room.name.toLowerCase().replace(/\s+/g, '-'),
+      }));
+
+      const ordered = [...withSlugs].sort((a, b) => {
+        const na = normalizeSlug(a);
+        const nb = normalizeSlug(b);
+        const ia = ROOM_SLUG_ORDER.indexOf(na);
+        const ib = ROOM_SLUG_ORDER.indexOf(nb);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
       });
 
@@ -93,13 +129,14 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
     };
   }, []);
 
-  const selectedRoom = rooms.find((r) => r.slug === state.roomSlug) ?? null;
+  const selectedRoom =
+    rooms.find((r) => r.slug === state.roomSlug) ?? null;
 
   async function handleSubmit() {
     if (!selectedRoom) {
       setState((prev) => ({
         ...prev,
-        error: "Pick a room first.",
+        error: 'Pick a room first.',
       }));
       return;
     }
@@ -110,7 +147,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
     if (!trimmedTitle && !trimmedLink) {
       setState((prev) => ({
         ...prev,
-        error: "Say at least a few words, or paste a link.",
+        error: 'Say at least a few words, or paste a link.',
       }));
       return;
     }
@@ -121,22 +158,22 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
       const user_token = getOrCreateUserToken();
 
       const { data, error } = await supabase
-        .from("threads")
+        .from('threads')
         .insert({
           room_id: selectedRoom.id,
-          title: trimmedTitle || "Untitled Nouk",
+          title: trimmedTitle || 'Untitled Nouk',
           link_url: trimmedLink || null,
           user_token,
         })
-        .select("id")
+        .select('id')
         .single();
 
       if (error) {
-        console.error("[ShareThought] Error creating thread", error);
+        console.error('[ShareThought] Error creating thread', error);
         setState((prev) => ({
           ...prev,
           submitting: false,
-          error: "Something went wrong. Please try again.",
+          error: 'Something went wrong. Please try again.',
         }));
         return;
       }
@@ -145,40 +182,40 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
         setState((prev) => ({
           ...prev,
           submitting: false,
-          error: "Could not start the Nouk. Please try again.",
+          error: 'Could not start the Nouk. Please try again.',
         }));
         return;
       }
 
-      // Close modal, reset, and go to the new thread
+      // Close modal and go to new thread
       setOpen(false);
       setState({
         roomSlug: selectedRoom.slug,
-        title: "",
-        link: "",
+        title: '',
+        link: '',
         submitting: false,
         error: null,
       });
 
       router.push(`/t/${data.id}`);
     } catch (err) {
-      console.error("[ShareThought] Unexpected error", err);
+      console.error('[ShareThought] Unexpected error', err);
       setState((prev) => ({
         ...prev,
         submitting: false,
-        error: "Something went wrong. Please try again.",
+        error: 'Something went wrong. Please try again.',
       }));
     }
   }
 
   return (
     <>
-      {/* Docked / compact main button */}
+      {/* Docked main button on the home screen */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 text-[15px] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform ${
-          compact ? "py-3" : "py-4"
+        className={`w-full rounded-full bg-[var(--accent)] text-[var(--paper)] font-semibold tracking-wide shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform ${
+          compact ? 'px-5 py-3 text-[14px]' : 'px-6 py-4 text-[15px]'
         }`}
       >
         Share a Thought
@@ -207,14 +244,25 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
               </button>
             </div>
 
-            {/* Room selector */}
+            {/* Room selector – Option A (vertical cards with micro-descriptions) */}
             <div className="mb-3">
               <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
                 1) Where do you want to post?
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
                 {rooms.map((room) => {
+                  const slugKey = normalizeSlug(room);
+                  const meta = ROOM_META[slugKey];
                   const isSelected = room.slug === state.roomSlug;
+
+                  const label = meta?.label ?? room.name;
+                  const blurb =
+                    meta?.blurb ??
+                    room.description ??
+                    '';
+
+                  const icon = meta?.icon ?? '📎';
+
                   return (
                     <button
                       key={room.id}
@@ -224,18 +272,30 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                           ...prev,
                           roomSlug: room.slug,
                           error:
-                            prev.error === "Pick a room first."
+                            prev.error === 'Pick a room first.'
                               ? null
                               : prev.error,
                         }))
                       }
-                      className={`flex items-center justify-center rounded-[18px] border px-3 py-2 text-[14px] ${
+                      className={`flex w-full items-start gap-3 rounded-[20px] border px-3 py-2 text-left transition-all ${
                         isSelected
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
-                          : "border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]"
+                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_10px_30px_rgba(15,23,42,0.35)]'
+                          : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_80%,white_20%)]'
                       }`}
                     >
-                      {room.name}
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-strong)] text-lg shadow-[0_10px_30px_rgba(15,23,42,0.35)]">
+                        {icon}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[14px] font-semibold text-[var(--ink-strong)]">
+                          {label}
+                        </span>
+                        {blurb && (
+                          <span className="text-[13px] text-[var(--muted-strong)]">
+                            {blurb}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -269,7 +329,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
               </div>
             </div>
 
-            {/* Error message */}
+            {/* Error */}
             {state.error && (
               <div className="mb-2 text-[13px] text-red-600">
                 {state.error}
@@ -291,7 +351,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                 disabled={state.submitting}
                 className="flex-1 rounded-[18px] bg-[var(--accent)] px-3 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_12px_30px_rgba(15,23,42,0.55)] disabled:opacity-60"
               >
-                {state.submitting ? "Starting…" : "Start Nouk"}
+                {state.submitting ? 'Starting…' : 'Start Nouk'}
               </button>
             </div>
           </div>
