@@ -1,31 +1,73 @@
-// src/lib/alias.ts
-import crypto from "crypto";
+// src/lib/aliases.ts
 
 /**
- * Deterministic alias from a token (e.g., nouk_user_token).
- * Same token -> same alias for every user/device.
+ * A small, cozy pool of alias fragments.
+ * We combine one from each list based on a simple hash of the user token
+ * so the same token always gets the same alias.
  */
-const ADJECTIVES = [
-  "cozy","quiet","warm","soft","brisk","calm","gentle","hushed","mellow","spry",
-  "brave","sincere","lively","kind","clever","bright","chill","curious","sprouted","amber"
+
+const ALIAS_FIRST = [
+  'Soft',
+  'Quiet',
+  'Lantern',
+  'Window',
+  'Sunroom',
+  'Garden',
+  'Midnight',
+  'Candle',
+  'Cozy',
+  'Gentle',
+  'Secret',
+  'Cloud',
+  'Amber',
+  'Willow',
+  'Fern',
 ];
 
-const NOUNS = [
-  "sprout","moss","leaf","fern","ember","cinder","willow","cedar","maple","birch",
-  "acorn","ivy","juniper","sage","thyme","basil","lavender","clover","poppy","reed"
+const ALIAS_SECOND = [
+  'Visitor',
+  'Guest',
+  'Echo',
+  'Light',
+  'Writer',
+  'Neighbor',
+  'Dreamer',
+  'Note',
+  'Voice',
+  'Whisper',
+  'Seed',
+  'Star',
+  'Sparrow',
+  ' Ember',
+  'Stone',
 ];
 
-function hashToInt(input: string): number {
-  const h = crypto.createHash("sha1").update(input).digest();
-  // Take first 4 bytes for a positive int
-  return h.readUInt32BE(0);
+/**
+ * Simple deterministic hash so the same token always maps to the same alias.
+ * This does NOT need to be cryptographically secure — just stable.
+ */
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
 }
 
+/**
+ * Given a user_token string, return a friendly anonymous alias.
+ */
 export function aliasFromToken(token: string): string {
-  const h = hashToInt(token);
-  const a = ADJECTIVES[h % ADJECTIVES.length];
-  const n = NOUNS[(h >> 8) % NOUNS.length];
-  // Small numeric tail to reduce collisions within same a+n bucket
-  const tail = (h % 97) + 3; // 3..99
-  return `${a}-${n}-${tail}`;
+  if (!token) {
+    return 'Cozy Guest';
+  }
+
+  const h = hashString(token);
+
+  const first =
+    ALIAS_FIRST[h % ALIAS_FIRST.length] ?? 'Quiet';
+  const second =
+    ALIAS_SECOND[(h >> 8) % ALIAS_SECOND.length] ?? 'Guest';
+
+  return `${first} ${second}`.trim();
 }
