@@ -1,3 +1,4 @@
+// src/components/ShareThought.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,8 +10,17 @@ type Room = {
   id: string;
   slug: string;
   name: string;
-  description: string | null;
+  description: string;
 };
+
+const ROOM_SLUG_ORDER = [
+  'sunroom',
+  'living-room',
+  'garden',
+  'lantern-room',
+  'observatory',
+  'library',
+] as const;
 
 type FormState = {
   roomSlug: string | null;
@@ -20,17 +30,7 @@ type FormState = {
   error: string | null;
 };
 
-// Canonical room order for the modal
-const ROOM_SLUG_ORDER = [
-  'sunroom',
-  'living-room',
-  'garden',
-  'lantern-room',
-  'observatory',
-  'library',
-];
-
-export default function ShareThoughtButton({ compact = false }: { compact?: boolean }) {
+export default function ShareThoughtButton() {
   const router = useRouter();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [open, setOpen] = useState(false);
@@ -42,15 +42,14 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
     error: null,
   });
 
-  // Load active rooms once on mount
+  // Load rooms once on mount
   useEffect(() => {
     let cancelled = false;
 
     async function loadRooms() {
       const { data, error } = await supabase
         .from('rooms')
-        .select('id, slug, name, description, is_active')
-        .eq('is_active', true);
+        .select('id, slug, name, description');
 
       if (error) {
         console.error('[ShareThought] Error loading rooms', error);
@@ -60,8 +59,8 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
       if (!data || cancelled) return;
 
       const ordered = [...data].sort((a, b) => {
-        const ia = ROOM_SLUG_ORDER.indexOf(a.slug);
-        const ib = ROOM_SLUG_ORDER.indexOf(b.slug);
+        const ia = ROOM_SLUG_ORDER.indexOf(a.slug as any);
+        const ib = ROOM_SLUG_ORDER.indexOf(b.slug as any);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
       });
 
@@ -137,7 +136,6 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
         return;
       }
 
-      // Close modal and go to the new thread
       setOpen(false);
       setState({
         roomSlug: selectedRoom.slug,
@@ -164,8 +162,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex w-full items-center justify-center rounded-full bg-[var(--accent)] text-[var(--paper)] font-semibold tracking-wide shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform
-        ${compact ? 'px-6 py-3 text-[15px]' : 'px-8 py-4 text-[16px]'}`}
+        className="flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-4 text-[15px] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform"
       >
         Share a Thought
       </button>
@@ -193,7 +190,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
             </div>
 
             {/* Room selector */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
                 1) Where do you want to post?
               </div>
@@ -225,10 +222,20 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                   );
                 })}
               </div>
+
+              {/* Selected room meaning */}
+              {selectedRoom && (
+                <p className="mt-2 text-[13px] leading-snug text-[var(--muted-strong)]">
+                  <span className="font-semibold">
+                    {selectedRoom.name}
+                  </span>{' '}
+                  · {selectedRoom.description}
+                </p>
+              )}
             </div>
 
             {/* Title + link inputs */}
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
                 2) What&apos;s the thread about?
               </div>
@@ -238,7 +245,10 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                   placeholder="Say something small to start…"
                   value={state.title}
                   onChange={(e) =>
-                    setState((prev) => ({ ...prev, title: e.target.value }))
+                    setState((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
                   }
                   className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
                 />
@@ -247,7 +257,10 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                   placeholder="Optional link (YouTube, Spotify, article…)"
                   value={state.link}
                   onChange={(e) =>
-                    setState((prev) => ({ ...prev, link: e.target.value }))
+                    setState((prev) => ({
+                      ...prev,
+                      link: e.target.value,
+                    }))
                   }
                   className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
                 />
