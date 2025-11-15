@@ -2,215 +2,159 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
-type RoomDef = {
+type Room = {
   slug: string;
-  title: string;
-  subtitle: string;
+  name: string;
+  description?: string;
 };
 
-const ROOMS: RoomDef[] = [
-  {
-    slug: 'library',
-    title: 'Library',
-    subtitle: 'Books, projects, ideas',
-  },
-  {
-    slug: 'kitchen',
-    title: 'Kitchen',
-    subtitle: 'Recipes, cooking, food talk',
-  },
-  {
-    slug: 'theater',
-    title: 'Theater',
-    subtitle: 'Movies & TV',
-  },
-  {
-    slug: 'game-room',
-    title: 'Game Room',
-    subtitle: 'Games, music & hobbies',
-  },
-  {
-    slug: 'garage',
-    title: 'Garage',
-    subtitle: 'DIY, tools, builds',
-  },
-  {
-    slug: 'study',
-    title: 'Study',
-    subtitle: 'Focus, learning, planning',
-  },
+const ROOM_PRESETS: Room[] = [
+  { slug: 'library',   name: 'Library',   description: 'Books, projects, ideas' },
+  { slug: 'kitchen',   name: 'Kitchen',   description: 'Recipes, cooking, food talk' },
+  { slug: 'theater',   name: 'Theater',   description: 'Movies & TV' },
+  { slug: 'game-room', name: 'Game Room', description: 'Games, music & hobbies' },
+  { slug: 'garage',    name: 'Garage',    description: 'DIY, tools, builds' },
+  { slug: 'study',     name: 'Study',     description: 'Focus, learning, planning' },
 ];
 
 export default function ShareThought() {
   const router = useRouter();
 
-  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
 
-  // Needed so createPortal has a real DOM to attach to
+  // Lock body scroll while modal is open
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const prev = document.body.style.overflow;
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = prev || '';
+    }
+    return () => {
+      document.body.style.overflow = prev || '';
+    };
+  }, [open]);
 
-  const resetState = () => {
-    setSelectedSlug(null);
-    setTitle('');
-    setLink('');
-  };
+  const canStart = !!room;
 
-  const handleOpen = () => {
-    resetState();
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const handleStart = () => {
-    if (!selectedSlug) return;
+    if (!room) return;
 
-    const params = new URLSearchParams();
-    if (title.trim()) params.set('title', title.trim());
-    if (link.trim()) params.set('link', link.trim());
+    const dest = `/room/${room.slug}?title=${encodeURIComponent(
+      title.trim(),
+    )}&link=${encodeURIComponent(link.trim())}`;
 
-    const qs = params.toString();
-    router.push(`/room/${selectedSlug}${qs ? `?${qs}` : ''}`);
-
+    router.push(dest);
     setOpen(false);
   };
-
-  const canStart =
-    !!selectedSlug && (title.trim().length > 0 || link.trim().length > 0);
-
-  // Bottom bar trigger (fixed)
-  const triggerBar = (
-    <div className="fixed left-0 right-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,12px)] bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/95 to-transparent backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={handleOpen}
-        className="w-full max-w-[720px] rounded-full bg-[var(--accent)] px-6 py-3 text-[16px] font-semibold text-[var(--accent-foreground)] shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-transform active:translate-y-[1px] active:shadow-[0_6px_20px_rgba(0,0,0,0.22)]"
-      >
-        Share a Thought
-      </button>
-    </div>
-  );
-
-  // Modal overlay
-  const modal =
-    mounted && open
-      ? createPortal(
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(0,0,0,0.40)] backdrop-blur-sm"
-            onClick={handleClose}
-          >
-            <div
-              className="w-full max-w-[720px] rounded-t-3xl bg-[var(--card)] px-5 pb-6 pt-4 shadow-[0_-18px_50px_rgba(0,0,0,0.45)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* drag handle */}
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--ring)]/70" />
-
-              <h2 className="mb-1 text-[20px] font-semibold">
-                Start a New Nouk
-              </h2>
-              <p className="mb-4 text-[14px] text-[var(--muted)]">
-                Find your cozy corner.
-              </p>
-
-              {/* Step 1 */}
-              <p className="mb-2 text-[14px] font-medium">
-                1) Where do you want to post?
-              </p>
-              <div className="mb-4 grid grid-cols-2 gap-2">
-                {ROOMS.map((room) => {
-                  const selected = room.slug === selectedSlug;
-                  return (
-                    <button
-                      key={room.slug}
-                      type="button"
-                      onClick={() => setSelectedSlug(room.slug)}
-                      className={[
-                        'flex flex-col items-start rounded-2xl border px-3 py-2 text-left text-[14px] transition-colors',
-                        selected
-                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                          : 'border-[var(--ring)] bg-[var(--card)] text-[var(--foreground)] hover:border-[var(--accent)]/60',
-                      ].join(' ')}
-                    >
-                      <span className="font-medium">{room.title}</span>
-                      <span className="text-[12px] text-[var(--muted)]">
-                        {room.subtitle}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Step 2 */}
-              <p className="mb-2 text-[14px] font-medium">
-                2) What&apos;s the thread about?{' '}
-                <span className="font-normal text-[var(--muted)]">
-                  (optional link/topic)
-                </span>
-              </p>
-
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Say something small to start…"
-                  className="w-full rounded-2xl border border-[var(--ring)] bg-[var(--paper)] px-3 py-2 text-[14px] outline-none focus:border-[var(--accent)]"
-                />
-                <input
-                  type="url"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="Optional link (YouTube, Spotify, article…)"
-                  className="w-full rounded-2xl border border-[var(--ring)] bg-[var(--paper)] px-3 py-2 text-[14px] outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="mt-5 flex justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="flex-1 rounded-2xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2 text-[14px]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!canStart}
-                  onClick={handleStart}
-                  className={[
-                    'flex-1 rounded-2xl px-4 py-2 text-[14px] font-semibold',
-                    canStart
-                      ? 'bg-[var(--accent)] text-[var(--accent-foreground)] shadow-[0_6px_18px_rgba(0,0,0,0.25)] active:translate-y-[1px] active:shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
-                      : 'bg-[var(--accent-soft)] text-[var(--muted)] opacity-70 cursor-not-allowed',
-                  ].join(' ')}
-                >
-                  Start Nouk
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
 
   return (
     <>
-      {triggerBar}
-      {modal}
+      {/* Bottom docked CTA – visible only when modal is closed */}
+      {!open && (
+        <button
+          type="button"
+          onClick={handleOpen}
+          className="nouk-cta fixed left-1/2 bottom-[max(18px,calc(env(safe-area-inset-bottom)+18px))] z-40 w-[min(640px,92vw)] -translate-x-1/2 px-6 py-4 text-[17px] shadow-soft"
+        >
+          Share a Thought
+        </button>
+      )}
+
+      {/* Centered modal sheet */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[rgba(0,0,0,0.32)] backdrop-blur-sm"
+          onClick={handleClose}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-[min(640px,92vw)] rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-5 shadow-soft animate-modalIn"
+          >
+            <h2 className="mb-1 text-[22px] font-serif text-ink">Start a New Nouk</h2>
+            <p className="mb-4 text-[13px] text-muted">Find your cozy corner.</p>
+
+            {/* Step 1 – room grid */}
+            <label className="mb-2 block text-[14px] text-muted">
+              1) Where do you want to post?
+            </label>
+            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {ROOM_PRESETS.map((r) => {
+                const selected = room?.slug === r.slug;
+                return (
+                  <button
+                    key={r.slug}
+                    type="button"
+                    onClick={() => setRoom(r)}
+                    className={`rounded-xl border px-3 py-2 text-left text-[13px] transition
+                      ${
+                        selected
+                          ? 'border-[var(--accent)] bg-[var(--card)] shadow-soft'
+                          : 'border-[var(--ring)] bg-[var(--card)] hover:border-[var(--accent)]'
+                      }`}
+                  >
+                    <div className="font-medium text-ink">{r.name}</div>
+                    {r.description && (
+                      <div className="text-[11px] text-[var(--muted)]">
+                        {r.description}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Step 2 – bigger inputs */}
+            <label className="mb-2 block text-[14px] text-[var(--ink)]">
+              2) What’s the thread about? (optional link/topic)
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Say something small to start…"
+              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-3 text-[14px] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            />
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="Optional link (YouTube, Spotify, article…)"
+              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-3 text-[14px] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            />
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2 text-[14px] active:scale-[0.97]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!canStart}
+                onClick={handleStart}
+                className={[
+                  'rounded-xl px-4 py-2 text-[14px] font-semibold transition',
+                  canStart
+                    ? 'bg-[var(--accent)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.25)] active:translate-y-[1px] active:shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
+                    : 'bg-[var(--accent)]/50 text-white/70 opacity-70 cursor-not-allowed',
+                ].join(' ')}
+              >
+                Start Nouk
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
