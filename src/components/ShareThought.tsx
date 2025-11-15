@@ -1,9 +1,9 @@
-// src/components/ShareThought.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-browser';
+import { getOrCreateUserToken } from '@/lib/userToken';
 
 type Room = {
   id: string;
@@ -20,7 +20,7 @@ type FormState = {
   error: string | null;
 };
 
-// Canonical order for rooms (by slug)
+// Canonical room order for the modal
 const ROOM_SLUG_ORDER = [
   'sunroom',
   'living-room',
@@ -29,71 +29,6 @@ const ROOM_SLUG_ORDER = [
   'observatory',
   'library',
 ];
-
-// Canonical display meta for each room (Option A)
-const ROOM_META: Record<
-  string,
-  { icon: string; label: string; blurb: string }
-> = {
-  'sunroom': {
-    icon: '🌤️',
-    label: 'Sunroom',
-    blurb: 'Light, everyday check-ins and passing thoughts.',
-  },
-  'living-room': {
-    icon: '🛋️',
-    label: 'Living Room',
-    blurb: 'Cozy conversation and shared moments with others.',
-  },
-  'garden': {
-    icon: '🌿',
-    label: 'Garden',
-    blurb: 'Gentle growth, intentions, and small steps forward.',
-  },
-  'lantern-room': {
-    icon: '🔮',
-    label: 'Lantern Room',
-    blurb: 'Heavier feelings and emotional processing in a safe glow.',
-  },
-  'observatory': {
-    icon: '🌙',
-    label: 'Observatory',
-    blurb: 'Late-night thoughts, wonder, and abstract ideas.',
-  },
-  'library': {
-    icon: '📖',
-    label: 'Library',
-    blurb: 'Quiet prompts, journaling, and thoughtful writing.',
-  },
-};
-
-// Local helper: create or reuse an anonymous user token in localStorage
-function getOrCreateUserToken(): string {
-  if (typeof window === 'undefined') {
-    // Should never actually be used server-side, but keeps TS happy
-    return '';
-  }
-
-  const KEY = 'nouk_user_token';
-  let token = window.localStorage.getItem(KEY);
-
-  if (!token) {
-    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-      token = crypto.randomUUID();
-    } else {
-      // Fallback: very simple random string
-      token = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-    window.localStorage.setItem(KEY, token);
-  }
-
-  return token;
-}
-
-function normalizeSlug(room: Room): string {
-  if (room.slug) return room.slug;
-  return room.name.toLowerCase().replace(/\s+/g, '-');
-}
 
 export default function ShareThoughtButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -107,14 +42,15 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
     error: null,
   });
 
-  // Load rooms once on mount
+  // Load active rooms once on mount
   useEffect(() => {
     let cancelled = false;
 
     async function loadRooms() {
       const { data, error } = await supabase
         .from('rooms')
-        .select('id, slug, name, description');
+        .select('id, slug, name, description, is_active')
+        .eq('is_active', true);
 
       if (error) {
         console.error('[ShareThought] Error loading rooms', error);
@@ -123,17 +59,9 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
 
       if (!data || cancelled) return;
 
-      // Normalize & order rooms according to our canonical order
-      const withSlugs = data.map((room) => ({
-        ...room,
-        slug: room.slug || room.name.toLowerCase().replace(/\s+/g, '-'),
-      }));
-
-      const ordered = [...withSlugs].sort((a, b) => {
-        const na = normalizeSlug(a);
-        const nb = normalizeSlug(b);
-        const ia = ROOM_SLUG_ORDER.indexOf(na);
-        const ib = ROOM_SLUG_ORDER.indexOf(nb);
+      const ordered = [...data].sort((a, b) => {
+        const ia = ROOM_SLUG_ORDER.indexOf(a.slug);
+        const ib = ROOM_SLUG_ORDER.indexOf(b.slug);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
       });
 
@@ -209,7 +137,7 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
         return;
       }
 
-      // Close modal and go to new thread
+      // Close modal and go to the new thread
       setOpen(false);
       setState({
         roomSlug: selectedRoom.slug,
@@ -232,13 +160,12 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
 
   return (
     <>
-      {/* Docked main button on the home screen */}
+      {/* Docked main button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`w-full rounded-full bg-[var(--accent)] text-[var(--paper)] font-semibold tracking-wide shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform ${
-          compact ? 'px-5 py-3 text-[14px]' : 'px-6 py-4 text-[15px]'
-        }`}
+        className={`flex w-full items-center justify-center rounded-full bg-[var(--accent)] text-[var(--paper)] font-semibold tracking-wide shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform
+        ${compact ? 'px-6 py-3 text-[15px]' : 'px-8 py-4 text-[16px]'}`}
       >
         Share a Thought
       </button>
@@ -247,7 +174,6 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
       {open && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(0,0,0,0.45)] sm:items-center">
           <div className="w-full max-w-md rounded-t-[28px] bg-[var(--card)] px-5 pb-5 pt-4 shadow-[0_-18px_55px_rgba(15,23,42,0.6)] sm:rounded-[28px]">
-            {/* Header */}
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted)]">
@@ -266,25 +192,14 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
               </button>
             </div>
 
-            {/* Room selector – vertical cards with micro-descriptions */}
+            {/* Room selector */}
             <div className="mb-3">
               <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
                 1) Where do you want to post?
               </div>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 {rooms.map((room) => {
-                  const slugKey = normalizeSlug(room);
-                  const meta = ROOM_META[slugKey];
                   const isSelected = room.slug === state.roomSlug;
-
-                  const label = meta?.label ?? room.name;
-                  const blurb =
-                    meta?.blurb ??
-                    room.description ??
-                    '';
-
-                  const icon = meta?.icon ?? '📎';
-
                   return (
                     <button
                       key={room.id}
@@ -299,25 +214,13 @@ export default function ShareThoughtButton({ compact = false }: { compact?: bool
                               : prev.error,
                         }))
                       }
-                      className={`flex w-full items-start gap-3 rounded-[20px] border px-3 py-2 text-left transition-all ${
+                      className={`flex items-center justify-center rounded-[18px] border px-3 py-2 text-[14px] ${
                         isSelected
-                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_10px_30px_rgba(15,23,42,0.35)]'
-                          : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_80%,white_20%)]'
+                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
+                          : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]'
                       }`}
                     >
-                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-strong)] text-lg shadow-[0_10px_30px_rgba(15,23,42,0.35)]">
-                        {icon}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[14px] font-semibold text-[var(--ink-strong)]">
-                          {label}
-                        </span>
-                        {blurb && (
-                          <span className="text-[13px] text-[var(--muted-strong)]">
-                            {blurb}
-                          </span>
-                        )}
-                      </div>
+                      {room.name}
                     </button>
                   );
                 })}
