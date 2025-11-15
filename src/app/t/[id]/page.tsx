@@ -6,7 +6,9 @@ import { getThreadWithReplies } from "@/lib/threads";
 import { addReply } from "@/lib/actions";
 import { aliasFromToken } from "@/lib/alias";
 
-type ThreadPageProps = { params: { id: string } };
+type ThreadPageProps = {
+  params: { id: string };
+};
 
 export default async function ThreadPage({ params }: ThreadPageProps) {
   const thread = await getThreadWithReplies(params.id);
@@ -23,12 +25,22 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
   const roomName = thread.room.name || thread.room.slug || "Room";
 
+  // Figure out *our* token for "You" labels.
+  // Support both cookie names in case older code set nouk_user_token.
   const cookieStore = cookies();
-  const myToken = cookieStore.get("nouk_user_token")?.value ?? null;
+  const myToken =
+    cookieStore.get("nouk_token")?.value ??
+    cookieStore.get("nouk_user_token")?.value ??
+    null;
+
+  const seedAlias = thread.user_token
+    ? aliasFromToken(thread.user_token)
+    : "Cozy Guest";
 
   // Server action for posting a reply
   async function handleReply(formData: FormData) {
     "use server";
+
     const body = (formData.get("body") as string | null)?.trim();
     if (!body) return;
 
@@ -58,98 +70,132 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             {thread.title}
           </h1>
 
-          {/* Quiet presence indicator */}
-          <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-            </span>
-            <span>Living Nouk</span>
+          <div className="rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            Living Nouk
           </div>
         </div>
 
         {/* Seed card */}
-        <section className="mb-6 rounded-[28px] bg-[var(--card)] px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.16)]">
-          <p className="mb-1 text-[13px] font-medium uppercase tracking-[0.16em] text-[var(--muted-strong)]">
-            Seed
-          </p>
-          <h2 className="mb-2 font-serif text-[22px] leading-snug text-[var(--ink-strong)]">
+        <section className="mb-8 rounded-[28px] bg-[var(--card)] px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+          <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-[var(--muted)]">
+            SEED
+          </div>
+
+          <h2 className="mb-2 font-serif text-[22px] leading-tight tracking-[-0.03em] text-[var(--ink-strong)]">
             {thread.title}
           </h2>
 
+          <p className="mb-3 text-[13px] text-[var(--muted)]">
+            from{" "}
+            <span className="font-medium text-[var(--muted-strong)]">
+              {myToken && thread.user_token && myToken === thread.user_token
+                ? "You"
+                : seedAlias}
+            </span>
+          </p>
+
           {thread.link_url ? (
-            <a
-              href={thread.link_url}
-              target="_blank"
-              rel="noreferrer"
-              className="mb-2 inline-flex items-center gap-1 text-[14px] font-medium text-[var(--accent)] underline"
-            >
-              Open link
-            </a>
+            <p className="mb-3 text-[14px]">
+              <Link
+                href={thread.link_url}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+              >
+                Open link
+              </Link>
+            </p>
           ) : null}
 
-          <p className="text-[14px] text-[var(--muted)]">
-            {thread.replies.length === 0
-              ? "It’s just the seed for now. Add a reply below to let this Nouk grow."
-              : "This is where it started. Scroll down to see how it’s grown."}
+          <p className="text-[15px] leading-relaxed text-[var(--ink-soft)]">
+            It’s just the seed for now. Add a reply below to let this Nouk grow.
           </p>
         </section>
 
-        {/* Replies list */}
-        <section className="space-y-3">
+        {/* Replies */}
+        <section className="mb-6">
           {thread.replies.length === 0 ? (
             <p className="text-center text-[14px] text-[var(--muted)]">
               No replies yet. Be the first to leave a thought.
             </p>
           ) : (
-            <div className="flex flex-col gap-3">
-              {thread.replies.map((r, index) => {
-                const isMine =
-                  myToken && r.user_token && myToken === r.user_token;
-                const alias = isMine
-                  ? "You"
-                  : aliasFromToken(r.user_token ?? "nouk-anon");
+            <div className="relative pl-4">
+              {/* Simple vine line */}
+              <div className="absolute left-1 top-0 h-full w-px bg-[var(--border-subtle)]" />
 
-                return (
-                  <div
-                    key={r.id}
-                    className="reply-animate rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-[var(--muted-strong)]">
-                        {alias}
-                      </span>
-                      <span className="text-[12px] text-[var(--muted)]">
-                        {new Date(r.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-[15px] leading-relaxed text-[var(--ink-soft)] whitespace-pre-wrap">
-                      {r.body}
-                    </p>
-                  </div>
-                );
-              })}
+              <div className="space-y-4">
+                {thread.replies.map((r) => {
+                  const alias = r.user_token
+                    ? aliasFromToken(r.user_token)
+                    : "Cozy Guest";
+
+                  const isMine =
+                    !!myToken && !!r.user_token && myToken === r.user_token;
+
+                  const created =
+                    r.created_at &&
+                    !Number.isNaN(Date.parse(r.created_at as any))
+                      ? new Date(r.created_at)
+                      : null;
+
+                  const createdLabel = created
+                    ? created.toLocaleString()
+                    : "";
+
+                  return (
+                    <article
+                      key={r.id}
+                      className="relative ml-2 rounded-[22px] bg-[var(--card)] px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.10)]"
+                    >
+                      {/* Little node dot on the vine */}
+                      <span className="absolute -left-[11px] top-4 h-3 w-3 rounded-full bg-[var(--card)] ring-2 ring-[var(--border-subtle)]" />
+
+                      <div className="mb-1 flex items-baseline justify-between gap-2">
+                        <span className="text-[13px] font-medium text-[var(--muted-strong)]">
+                          {isMine ? "You" : alias}
+                        </span>
+                        {createdLabel && (
+                          <span className="text-[11px] text-[var(--muted)]">
+                            {createdLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[15px] leading-relaxed text-[var(--ink-soft)]">
+                        {r.body}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
           )}
         </section>
 
-        {/* Reply box */}
-        <section className="mt-6 rounded-[28px] bg-[var(--card-elevated)] p-4 shadow-[0_18px_45px_rgba(15,23,42,0.28)]">
-          <form action={handleReply} className="flex flex-col gap-3">
+        {/* Reply form */}
+        <section className="mt-auto">
+          <form
+            action={handleReply}
+            className="rounded-[28px] bg-[var(--card)] px-4 py-3 shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
+          >
+            <label className="mb-1 block text-[13px] font-medium text-[var(--muted-strong)]">
+              Write a reply.
+            </label>
+
             <textarea
-              key={thread.replies.length} // force remount → clears after submit
               name="body"
-              rows={3}
-              className="w-full resize-none rounded-2xl border border-[var(--accent-soft)] bg-[var(--paper)] px-3 py-3 text-[15px] text-[var(--ink)] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-              placeholder="Write a reply."
+              placeholder="Say something small to keep it going…"
+              className="h-28 w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-transparent px-3 py-2 text-[15px] outline-none placeholder:text-[var(--muted)]"
             />
-            <button
-              type="submit"
-              className="self-end rounded-full bg-[var(--accent)] px-5 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:translate-y-[1px]"
-            >
-              Send
-            </button>
+
+            <div className="mt-3 flex justify-end">
+              <button
+                type="submit"
+                className="rounded-full bg-[var(--accent)] px-6 py-2 text-[14px] font-medium text-white shadow-[0_12px_25px_rgba(185,99,64,0.55)] transition hover:translate-y-[1px] hover:shadow-[0_8px_18px_rgba(185,99,64,0.45)] active:translate-y-[2px] active:shadow-[0_3px_10px_rgba(185,99,64,0.35)]"
+              >
+                Send
+              </button>
+            </div>
           </form>
         </section>
       </div>
