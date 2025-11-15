@@ -1,7 +1,6 @@
 // src/app/t/[id]/page.tsx
-import { format } from 'date-fns';
 import { redirect } from 'next/navigation';
-import { getThreadWithReplies, postReply } from '@/lib/threads'; // adjust to your path
+import { getThreadWithReplies, postReply } from '@/lib/threads'; // adjust if needed
 
 type ThreadPageProps = {
   params: { id: string };
@@ -16,8 +15,14 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
     redirect('/');
   }
 
-  // You can wire this later based on Supabase Realtime
-  const hasSoftPresence = false;
+  // Basic date helpers using native APIs
+  const createdAt = new Date(thread.created_at);
+  const createdLabel = createdAt.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const hasSoftPresence = false; // wire this later with Realtime if you want
 
   return (
     <div className="thread-page-bg min-h-screen text-[var(--ink)]">
@@ -59,7 +64,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
               Seed
             </span>
             <span className="text-[11px] text-[var(--muted)]">
-              Started {format(new Date(thread.created_at), 'MMM d')}
+              Started {createdLabel}
             </span>
           </div>
 
@@ -99,6 +104,11 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
           {thread.replies.map((reply: any, index: number) => {
             const color = DOT_COLORS[index % DOT_COLORS.length];
+            const replyDate = new Date(reply.created_at);
+            const timeLabel = replyDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+            });
 
             return (
               <div key={reply.id} className="reply-animate relative ml-6">
@@ -110,7 +120,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
                 <div className="reply-bubble px-4 py-3">
                   <p className="text-sm leading-relaxed">{reply.body}</p>
                   <p className="mt-1 text-[11px] text-[var(--muted)]">
-                    {format(new Date(reply.created_at), 'p')}
+                    {timeLabel}
                   </p>
                 </div>
               </div>
