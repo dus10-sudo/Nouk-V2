@@ -1,35 +1,30 @@
 // src/app/t/[id]/page.tsx
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-import { getThread } from "@/lib/threads";
-import { getReplies } from "@/lib/replies";
+import { getThreadWithReplies } from "@/lib/threads";
 import { addReply } from "@/lib/actions";
+import { aliasFromToken } from "@/lib/alias";
 
-type ThreadPageProps = {
-  params: { id: string };
-};
-
-const DOT_COLORS = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7"];
+type ThreadPageProps = { params: { id: string } };
 
 export default async function ThreadPage({ params }: ThreadPageProps) {
-  const thread = await getThread(params.id);
+  const thread = await getThreadWithReplies(params.id);
 
   if (!thread) {
-    return notFound();
+    return (
+      <main className="min-h-screen bg-paper text-ink">
+        <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
+          <p>Thread not found.</p>
+        </div>
+      </main>
+    );
   }
 
-  const replies = await getReplies(params.id);
+  const roomName = thread.room.name || thread.room.slug || "Room";
 
-  const createdAt = new Date(thread.created_at);
-  const createdLabel = createdAt.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-
-  // You can wire this later to Supabase Realtime if you want
-  const hasSoftPresence = false;
+  const cookieStore = cookies();
+  const myToken = cookieStore.get("nouk_user_token")?.value ?? null;
 
   // Server action for posting a reply
   async function handleReply(formData: FormData) {
@@ -42,141 +37,122 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   }
 
   return (
-    <div className="thread-page-bg min-h-screen text-[var(--ink)]">
-      <div className="thread-vine-root mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-5 pt-5">
-        {/* vertical vine */}
-        <div className="thread-vine" aria-hidden="true" />
+    <main className="min-h-screen bg-paper text-ink">
+      <div className="mx-auto flex min-h-screen max-w-[720px] flex-col px-4 pb-24 pt-6">
+        {/* Breadcrumb */}
+        <div className="mb-2 text-[13px] text-[var(--muted)]">
+          <Link href="/" className="hover:underline">
+            Rooms
+          </Link>
+          {" › "}
+          <Link href={`/room/${thread.room.slug}`} className="hover:underline">
+            {roomName}
+          </Link>
+          {" › "}
+          <span>{thread.title}</span>
+        </div>
 
-        {/* header */}
-        <header className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/r/${thread.room.slug ?? ""}`}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(0,0,0,0.03)] text-sm"
-            >
-              ←
-            </Link>
-            <div className="flex flex-col">
-              <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
-                {thread.room.name || thread.room.slug || "Room"}
-              </span>
-              <h1 className="text-[18px] font-semibold leading-tight">
-                {thread.title}
-              </h1>
-            </div>
-          </div>
+        {/* Header row */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h1 className="font-serif text-[32px] leading-tight tracking-[-0.03em] text-[var(--ink-strong)]">
+            {thread.title}
+          </h1>
 
-          {hasSoftPresence && (
-            <div className="flex items-center gap-1 text-[11px] text-[var(--muted)]">
-              <span className="soft-presence-dot" />
-              <span>Someone was here recently</span>
-            </div>
-          )}
-        </header>
-
-        {/* seed card */}
-        <section className="seed-card mb-4 px-4 py-4">
-          <div className="mb-1 flex items-baseline justify-between gap-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-              Seed
+          {/* Quiet presence indicator */}
+          <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--card)] px-4 py-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-soft)] opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            <span className="text-[11px] text-[var(--muted)]">
-              Started {createdLabel}
-            </span>
+            <span>Living Nouk</span>
           </div>
+        </div>
 
-          <h2 className="mb-1 text-lg font-semibold leading-snug">
+        {/* Seed card */}
+        <section className="mb-6 rounded-[28px] bg-[var(--card)] px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.16)]">
+          <p className="mb-1 text-[13px] font-medium uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+            Seed
+          </p>
+          <h2 className="mb-2 font-serif text-[22px] leading-snug text-[var(--ink-strong)]">
             {thread.title}
           </h2>
 
-          {"body" in thread && thread.body && (
-            <p className="mb-3 text-sm leading-relaxed text-[var(--ink-soft)]">
-              {thread.body}
-            </p>
-          )}
-
-          {"link_url" in thread && thread.link_url && (
+          {thread.link_url ? (
             <a
               href={thread.link_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center rounded-full border border-[rgba(179,140,97,0.35)] bg-[rgba(255,248,238,0.9)] px-3 py-1 text-xs font-medium text-[var(--accent)]"
+              className="mb-2 inline-flex items-center gap-1 text-[14px] font-medium text-[var(--accent)] underline"
             >
-              {thread.link_url.replace(/^https?:\/\//, "")}
+              Open link
             </a>
-          )}
+          ) : null}
 
-          <p className="mt-3 text-[11px] italic text-[var(--muted)]">
-            You started this cozy little corner.
+          <p className="text-[14px] text-[var(--muted)]">
+            {thread.replies.length === 0
+              ? "It’s just the seed for now. Add a reply below to let this Nouk grow."
+              : "This is where it started. Scroll down to see how it’s grown."}
           </p>
         </section>
 
-        {/* replies */}
-        <main className="flex-1 space-y-3 pb-4">
-          {replies.length > 0 && (
-            <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
-              Today
+        {/* Replies list */}
+        <section className="space-y-3">
+          {thread.replies.length === 0 ? (
+            <p className="text-center text-[14px] text-[var(--muted)]">
+              No replies yet. Be the first to leave a thought.
             </p>
-          )}
+          ) : (
+            <div className="flex flex-col gap-3">
+              {thread.replies.map((r, index) => {
+                const isMine =
+                  myToken && r.user_token && myToken === r.user_token;
+                const alias = isMine
+                  ? "You"
+                  : aliasFromToken(r.user_token ?? "nouk-anon");
 
-          {replies.map((reply, index) => {
-            const color = DOT_COLORS[index % DOT_COLORS.length];
-            const replyDate = new Date(reply.created_at);
-            const timeLabel = replyDate.toLocaleTimeString("en-US", {
-              hour: "numeric",
-              minute: "2-digit",
-            });
-
-            return (
-              <div key={reply.id} className="reply-animate relative ml-6">
-                <div
-                  className="reply-dot"
-                  style={{ backgroundColor: color }}
-                  aria-hidden="true"
-                />
-                <div className="reply-bubble px-4 py-3">
-                  <p className="text-sm leading-relaxed">{reply.body}</p>
-                  <p className="mt-1 text-[11px] text-[var(--muted)]">
-                    {timeLabel}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-
-          {replies.length === 0 && (
-            <p className="ml-1 mt-2 text-[12px] text-[var(--muted)]">
-              No replies yet. You can leave this Nouk to fade quietly, or say
-              something back.
-            </p>
-          )}
-        </main>
-
-        {/* reply composer */}
-        <section className="reply-input-card mt-2 border border-[rgba(179,140,97,0.15)] px-3 py-3">
-          <form action={handleReply} className="flex flex-col gap-2">
-            <div className="reply-input-field flex-1 px-3 py-2">
-              <textarea
-                name="body"
-                rows={2}
-                className="h-12 w-full resize-none border-none bg-transparent text-sm outline-none placeholder:text-[var(--muted)]"
-                placeholder="Write a reply..."
-              />
+                return (
+                  <div
+                    key={r.id}
+                    className="reply-animate rounded-[24px] bg-[var(--card)] px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.12)]"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-[var(--muted-strong)]">
+                        {alias}
+                      </span>
+                      <span className="text-[12px] text-[var(--muted)]">
+                        {new Date(r.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[15px] leading-relaxed text-[var(--ink-soft)] whitespace-pre-wrap">
+                      {r.body}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="mt-1 flex items-center justify-end gap-2">
-              <span className="mr-auto text-[11px] text-[var(--muted)]">
-                Tiny replies or longer thoughts are both welcome.
-              </span>
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-4 py-1.5 text-xs font-semibold text-white shadow-[0_14px_30px_rgba(234,122,59,0.55)]"
-              >
-                Send
-              </button>
-            </div>
+          )}
+        </section>
+
+        {/* Reply box */}
+        <section className="mt-6 rounded-[28px] bg-[var(--card-elevated)] p-4 shadow-[0_18px_45px_rgba(15,23,42,0.28)]">
+          <form action={handleReply} className="flex flex-col gap-3">
+            <textarea
+              key={thread.replies.length} // force remount → clears after submit
+              name="body"
+              rows={3}
+              className="w-full resize-none rounded-2xl border border-[var(--accent-soft)] bg-[var(--paper)] px-3 py-3 text-[15px] text-[var(--ink)] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+              placeholder="Write a reply."
+            />
+            <button
+              type="submit"
+              className="self-end rounded-full bg-[var(--accent)] px-5 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_10px_30px_rgba(0,0,0,0.25)] active:translate-y-[1px]"
+            >
+              Send
+            </button>
           </form>
         </section>
       </div>
-    </div>
+    </main>
   );
 }
