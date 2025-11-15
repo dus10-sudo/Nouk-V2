@@ -28,18 +28,14 @@ export default function BottomNav() {
               <button
                 type="button"
                 onClick={() => router.push('/')}
-                className="
-                  text-[12px]
-                  font-semibold
-                  text-[var(--muted-strong)]
-                "
+                className="text-[12px] font-semibold text-[var(--muted-strong)]"
               >
                 Nouk
               </button>
             </div>
 
             {/* CENTER: CTA */}
-            <div className="flex flex-1 justify-center">
+            <div className="flex-1 px-1">
               <ShareThoughtButton />
             </div>
 
@@ -62,11 +58,6 @@ export default function BottomNav() {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}          </div>
         </div>
       </div>
     </div>
