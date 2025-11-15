@@ -25,17 +25,12 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
   const roomName = thread.room.name || thread.room.slug || "Room";
 
-  // Figure out *our* token for "You" labels.
-  // Support both cookie names in case older code set nouk_user_token.
+  // Figure out *our* token for "You" labels (replies only).
   const cookieStore = cookies();
   const myToken =
     cookieStore.get("nouk_token")?.value ??
     cookieStore.get("nouk_user_token")?.value ??
     null;
-
-  const seedAlias = thread.user_token
-    ? aliasFromToken(thread.user_token)
-    : "Cozy Guest";
 
   // Server action for posting a reply
   async function handleReply(formData: FormData) {
@@ -75,24 +70,15 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           </div>
         </div>
 
-        {/* Seed card */}
+        {/* Seed card (no alias needed here) */}
         <section className="mb-8 rounded-[28px] bg-[var(--card)] px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
           <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-[var(--muted)]">
             SEED
           </div>
 
-          <h2 className="mb-2 font-serif text-[22px] leading-tight tracking-[-0.03em] text-[var(--ink-strong)]">
+          <h2 className="mb-3 font-serif text-[22px] leading-tight tracking-[-0.03em] text-[var(--ink-strong)]">
             {thread.title}
           </h2>
-
-          <p className="mb-3 text-[13px] text-[var(--muted)]">
-            from{" "}
-            <span className="font-medium text-[var(--muted-strong)]">
-              {myToken && thread.user_token && myToken === thread.user_token
-                ? "You"
-                : seedAlias}
-            </span>
-          </p>
 
           {thread.link_url ? (
             <p className="mb-3 text-[14px]">
@@ -108,7 +94,8 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
           ) : null}
 
           <p className="text-[15px] leading-relaxed text-[var(--ink-soft)]">
-            It’s just the seed for now. Add a reply below to let this Nouk grow.
+            It started here. Add a reply below to let this Nouk grow, or let it
+            fade when you’re done talking.
           </p>
         </section>
 
@@ -161,7 +148,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
                         )}
                       </div>
 
-                      <p className="text-[15px] leading-relaxed text-[var(--ink-soft)]">
+                      <p className="text-[15px] leading-relaxed text-[var(--ink-soft)] whitespace-pre-wrap">
                         {r.body}
                       </p>
                     </article>
