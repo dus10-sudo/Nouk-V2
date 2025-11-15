@@ -30,17 +30,7 @@ type FormState = {
   error: string | null;
 };
 
-type ShareThoughtButtonProps = {
-  /** 
-   * full-width = big docked button (old style)
-   * nav = compact pill for the bottom nav bar
-   */
-  variant?: 'full-width' | 'nav';
-};
-
-export default function ShareThoughtButton({
-  variant = 'full-width',
-}: ShareThoughtButtonProps) {
+export default function ShareThoughtButton() {
   const router = useRouter();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [open, setOpen] = useState(false);
@@ -166,28 +156,29 @@ export default function ShareThoughtButton({
     }
   }
 
-  const baseButtonClasses =
-    'flex items-center justify-center rounded-full bg-[var(--accent)] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform';
-
-  const sizeClasses =
-    variant === 'full-width'
-      ? 'w-full px-6 py-4 text-[15px]'
-      : 'px-4 py-2 text-[14px]';
-
   return (
     <>
-      {/* Trigger button (size depends on variant) */}
+      {/* Main CTA (used inside bottom nav) */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`${baseButtonClasses} ${sizeClasses}`}
+        className="
+          flex w-full items-center justify-center
+          rounded-full bg-[var(--accent)]
+          px-6 py-3
+          text-[15px] font-semibold tracking-wide
+          text-[var(--paper)]
+          shadow-[0_14px_40px_rgba(15,23,42,0.5)]
+          active:scale-[0.98]
+          transition-transform
+        "
       >
         Share a Thought
       </button>
 
       {/* Overlay modal */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(0,0,0,0.45)] sm:items-center">
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(0,0,0,0.45)] sm:items-center">
           <div className="w-full max-w-md rounded-t-[28px] bg-[var(--card)] px-5 pb-5 pt-4 shadow-[0_-18px_55px_rgba(15,23,42,0.6)] sm:rounded-[28px]">
             <div className="mb-3 flex items-center justify-between">
               <div>
