@@ -1,7 +1,7 @@
 // src/app/page.tsx
 import Link from "next/link";
 import ShareThoughtButton from "@/components/ShareThought";
-import { getRooms } from "@/lib/rooms";
+import { supabase } from "@/lib/supabase";
 
 // Order that rooms appear on the homepage
 const ROOM_SLUG_ORDER = [
@@ -58,7 +58,16 @@ const ROOM_META: Record<
 };
 
 export default async function HomePage() {
-  const dbRooms: DbRoom[] = await getRooms();
+  // Load rooms from Supabase
+  const { data, error } = await supabase
+    .from("rooms")
+    .select("id, slug, name, description, is_active");
+
+  const dbRooms: DbRoom[] = data ?? [];
+
+  if (error) {
+    console.error("[HomePage] Error loading rooms", error);
+  }
 
   const rooms = dbRooms
     .filter((r) => r.is_active ?? true)
@@ -79,7 +88,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-5 pt-6">
+      <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-4 pt-6">
         {/* Hero */}
         <header className="flex flex-col items-center text-center">
           <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--card)] shadow-[0_18px_40px_rgba(15,23,42,0.35)]">
