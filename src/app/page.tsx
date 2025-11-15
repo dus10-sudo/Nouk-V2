@@ -1,107 +1,146 @@
 // src/app/page.tsx
+'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser';
 import ShareThoughtButton from '@/components/ShareThought';
 
-const ROOMS = [
-  {
-    slug: 'sunroom',
-    name: 'Sunroom',
-    description: 'For light check ins, small wins, and passing thoughts.',
-    icon: '🌞',
-  },
-  {
-    slug: 'living-room',
-    name: 'Living Room',
-    description: 'For relaxed conversation, shared moments, and company.',
-    icon: '🛋️',
-  },
-  {
-    slug: 'garden',
-    name: 'Garden',
-    description: 'For intentions, tiny steps, and gentle personal growth.',
-    icon: '🌱',
-  },
-  {
-    slug: 'lantern-room',
-    name: 'Lantern Room',
-    description:
-      'For heavy feelings, venting, and emotional processing.',
-    icon: '🔮',
-  },
-  {
-    slug: 'observatory',
-    name: 'Observatory',
-    description:
-      'For late night thoughts, big questions, and wonder.',
-    icon: '🌙',
-  },
-  {
-    slug: 'library',
-    name: 'Library',
-    description:
-      'For journaling, prompts, and more thoughtful writing.',
-    icon: '📖',
-  },
-];
+type Room = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+};
+
+const ROOM_SLUG_ORDER = [
+  'sunroom',
+  'living-room',
+  'garden',
+  'lantern-room',
+  'observatory',
+  'library',
+] as const;
 
 export default function HomePage() {
+  const router = useRouter();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRooms() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, slug, name, description');
+
+      if (error) {
+        console.error('[Home] Error loading rooms', error);
+        setLoading(false);
+        return;
+      }
+      if (!data || cancelled) {
+        setLoading(false);
+        return;
+      }
+
+      const ordered = [...data].sort((a, b) => {
+        const ia = ROOM_SLUG_ORDER.indexOf(a.slug as any);
+        const ib = ROOM_SLUG_ORDER.indexOf(b.slug as any);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      });
+
+      setRooms(ordered);
+      setLoading(false);
+    }
+
+    loadRooms();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function handleLogoClick() {
+    // For now: scroll to top smoothly.
+    // Later we can repurpose this for Notebook / global nav.
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
-      <div className="mx-auto flex max-w-xl flex-col gap-6 px-5 pb-10 pt-8 sm:pt-10">
-        {/* Header */}
-        <header className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--logo-bg)] shadow-[0_18px_45px_rgba(15,23,42,0.35)]">
-            <span className="text-2xl" aria-hidden="true">
+    <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pb-6 pt-3">
+        {/* Top header bar */}
+        <header className="mb-4 flex items-center justify-between">
+          <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)]">
+            NOUK
+          </div>
+          <button
+            type="button"
+            onClick={handleLogoClick}
+            aria-label="Back to top"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--card)] shadow-[0_6px_18px_rgba(15,23,42,0.35)] active:scale-[0.96] transition-transform"
+          >
+            <span aria-hidden className="text-[18px]">
               🌱
             </span>
-            <span className="sr-only">Nouk</span>
-          </div>
+          </button>
+        </header>
 
-          <p className="max-w-[22rem] text-[15px] leading-snug text-[var(--muted-strong)]">
+        {/* Hero / tagline */}
+        <section className="mb-6 flex flex-col items-center text-center">
+          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-[var(--card)] shadow-[0_18px_55px_rgba(15,23,42,0.45)]">
+            <span aria-hidden className="text-3xl">
+              🌱
+            </span>
+          </div>
+          <p className="max-w-md text-[15px] leading-relaxed text-[var(--muted-strong)]">
             A quiet little house for short-lived threads. Share something
             small, let it breathe, and let it fade.
           </p>
-        </header>
-
-        {/* Rooms list */}
-        <section aria-label="Rooms" className="space-y-3">
-          {ROOMS.map((room) => (
-            <Link
-              key={room.slug}
-              href={`/r/${room.slug}`}
-              className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] rounded-[26px]"
-            >
-              <div className="flex items-center gap-3 rounded-[26px] bg-[var(--card)] px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.20)]">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface)] shadow-[0_10px_25px_rgba(15,23,42,0.20)] text-[22px]"
-                  aria-hidden="true"
-                >
-                  {room.icon}
-                </div>
-
-                <div className="flex-1">
-                  <div className="text-[15px] font-semibold text-[var(--ink-strong)]">
-                    {room.name}
-                  </div>
-                  <div className="text-[13px] leading-snug text-[var(--muted-strong)]">
-                    {room.description}
-                  </div>
-                </div>
-
-                <span
-                  className="ml-2 text-[18px] text-[var(--muted)]"
-                  aria-hidden="true"
-                >
-                  ›
-                </span>
-              </div>
-            </Link>
-          ))}
         </section>
 
-        {/* Share button at the bottom (not fixed, won’t cover Library) */}
-        <div className="mt-4 mb-2">
+        {/* Rooms list */}
+        <section className="flex-1">
+          {loading ? (
+            <div className="rounded-[24px] bg-[var(--card)] px-4 py-4 text-[14px] text-[var(--muted-strong)] shadow-[0_16px_40px_rgba(15,23,42,0.35)]">
+              Loading rooms…
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {rooms.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={() => router.push(`/rooms/${room.slug}`)}
+                  className="flex w-full items-center justify-between rounded-[24px] bg-[var(--card)] px-4 py-4 text-left shadow-[0_16px_40px_rgba(15,23,42,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                >
+                  <div>
+                    <div className="mb-1 text-[16px] font-semibold text-[var(--ink)]">
+                      {room.name}
+                    </div>
+                    <div className="text-[14px] leading-snug text-[var(--muted-strong)]">
+                      {room.description}
+                    </div>
+                  </div>
+                  <span
+                    aria-hidden
+                    className="ml-3 text-[20px] text-[var(--muted-strong)]"
+                  >
+                    ›
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Share button at the very bottom (not fixed) */}
+        <div className="mt-5">
           <ShareThoughtButton />
         </div>
       </div>
