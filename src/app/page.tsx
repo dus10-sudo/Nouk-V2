@@ -44,42 +44,35 @@ const ROOMS = [
 export default function HomePage() {
   return (
     <main className="min-h-[100dvh] bg-[var(--canvas)] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-6 pt-6 sm:max-w-lg">
-        {/* Hero: sprout + title + tagline */}
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-4 pt-5 sm:max-w-lg">
+        {/* Hero */}
         <header className="flex flex-col items-center text-center">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] shadow-soft">
-            <span className="text-xl text-[var(--accent)] animate-pulse">
-              🌱
-            </span>
+            <span className="text-xl text-[var(--accent)] animate-pulse">🌱</span>
           </div>
+
           <h1 className="font-serif text-[28px] leading-tight tracking-[-0.05em]">
             Nouk
           </h1>
+
           <p className="mt-2 max-w-xs text-[13px] leading-snug text-[var(--ink-soft)]">
             A cozy space for short-lived threads. Say something small, let it
             breathe, then let it fade.
           </p>
         </header>
 
-        {/* Smaller spacer between hero and room list */}
-        <div className="h-5" />
+        <div className="h-4" />
 
-        {/* Room cards */}
+        {/* Rooms */}
         <section className="flex-1">
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {ROOMS.map((room) => (
-              <Link
-                key={room.slug}
-                href={`/room/${room.slug}`}
-                className="block"
-              >
-                <div className="group flex items-center gap-3 rounded-[24px] bg-[var(--card)] px-4 py-3 shadow-soft transition-transform duration-150 ease-out hover:-translate-y-[2px] hover:shadow-soft-lg active:translate-y-[1px]">
-                  {/* Icon */}
+              <Link key={room.slug} href={`/room/${room.slug}`} className="block">
+                <div className="group flex items-center gap-3 rounded-[20px] bg-[var(--card)] px-4 py-3 shadow-soft transition-transform duration-150 hover:-translate-y-[2px] hover:shadow-soft-lg">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(0,0,0,0.04)] text-[17px]">
-                    <span aria-hidden="true">{room.icon}</span>
+                    <span>{room.icon}</span>
                   </div>
 
-                  {/* Text */}
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[15px] font-semibold text-[var(--ink)]">
                       {room.name}
@@ -89,8 +82,7 @@ export default function HomePage() {
                     </span>
                   </div>
 
-                  {/* Chevron */}
-                  <span className="text-[18px] text-[var(--muted)] transition-transform duration-150 group-hover:translate-x-[2px]">
+                  <span className="text-[18px] text-[var(--muted)] transition-transform group-hover:translate-x-[2px]">
                     ›
                   </span>
                 </div>
@@ -99,12 +91,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Tiny spacer so button doesn’t sit on cards */}
-        <div className="h-4" />
-
-        {/* Share a Thought CTA */}
-        <section className="mt-auto">
-          <ShareThoughtButton />
+        {/* Tighter CTA */}
+        <section className="mt-3">
+          <ShareThoughtButton compact />
         </section>
       </div>
     </main>
