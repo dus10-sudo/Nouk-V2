@@ -21,31 +21,31 @@ export default function BottomNav() {
             shadow-[0_-4px_16px_rgba(15,23,42,0.22)]
           "
         >
-          <div className="flex items-center justify-between px-4 py-1">
-            {/* LEFT: Nouk label (fixed width so center is stable) */}
+          <div className="flex items-center justify-between px-4 py-1.5">
+
+            {/* LEFT: Nouk label */}
             <div className="w-20 flex justify-start">
               <button
                 type="button"
                 onClick={() => router.push('/')}
                 className="
-                  text-[10px]
+                  text-[12px]
                   font-semibold
-                  uppercase
-                  tracking-[0.35em]
+                  tracking-[0.18em]
                   text-[var(--muted-strong)]
-                  leading-none
+                  whitespace-nowrap
                 "
               >
                 N O U K
               </button>
             </div>
 
-            {/* CENTER: Share CTA, perfectly centered */}
+            {/* CENTER CTA */}
             <div className="flex flex-1 justify-center">
               <ShareThoughtButton />
             </div>
 
-            {/* RIGHT: Sprout home button (same width as left for balance) */}
+            {/* RIGHT: Sprout */}
             <div className="w-20 flex justify-end">
               <button
                 type="button"
@@ -55,17 +55,15 @@ export default function BottomNav() {
                     : router.push('/')
                 }
                 className="
-                  flex h-7 w-7 items-center justify-center
+                  flex h-8 w-8 items-center justify-center
                   rounded-full bg-[var(--card)]
                   shadow-[0_6px_14px_rgba(15,23,42,0.25)]
                 "
-                aria-label={isHome ? 'Back to top' : 'Back to home'}
               >
-                <span aria-hidden className="text-[15px]">
-                  🌱
-                </span>
+                🌱
               </button>
             </div>
+
           </div>
         </div>
       </div>
