@@ -1,134 +1,120 @@
 // src/app/page.tsx
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import ShareThought from '@/components/ShareThought';
 
-import Link from "next/link";
-import RoomCard from "@/components/RoomCard";
-import Logo from "@/components/Logo";
-import {
-  IconLibrary,
-  IconTheater,
-  IconGame,
-} from "@/components/Icons";
+export const metadata: Metadata = {
+  title: 'Nouk',
+  description: 'A small, quiet house for short-lived threads.',
+};
+
+const ROOMS = [
+  {
+    slug: 'library',
+    name: 'Library',
+    description: 'Books, projects, ideas',
+    icon: '▦',
+  },
+  {
+    slug: 'lounge',
+    name: 'Lounge',
+    description: 'Soft check-ins, daily life',
+    icon: '▦',
+  },
+  {
+    slug: 'studio',
+    name: 'Studio',
+    description: 'Creative work & drafts',
+    icon: '▦',
+  },
+  {
+    slug: 'theater',
+    name: 'Theater',
+    description: 'Movies, shows, deep dives',
+    icon: '▭',
+  },
+  {
+    slug: 'game-room',
+    name: 'Game Room',
+    description: 'Games, streams, silly stuff',
+    icon: '▢',
+  },
+  {
+    slug: 'cafe',
+    name: 'Café',
+    description: 'Open table, anything goes',
+    icon: '▦',
+  },
+];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-4 pb-28 pt-8 lg:flex-row lg:items-start lg:gap-10 lg:pb-16 lg:pt-12">
-        {/* Left column – Logo + copy */}
-        <section className="mb-8 flex flex-col items-center text-center lg:mb-0 lg:w-[38%] lg:items-start lg:text-left">
-          <Logo />
-
-          <p className="mt-2 text-[14px] text-[var(--muted)]">
-            A small, quiet house for short-lived threads. Pick a room, start a
-            Nouk, let it fade when you&apos;re done talking.
+    <main className="relative min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
+      <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-24 pt-6">
+        {/* Hero */}
+        <section className="mb-4 flex flex-col items-center text-center">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(234,122,59,0.14)]">
+            <span className="text-xl text-[var(--accent)]">🌱</span>
+          </div>
+          <h1 className="text-[28px] font-serif leading-tight">Nouk</h1>
+          <p className="mt-2 text-sm text-[var(--ink-soft)]">
+            A small, quiet house for short-lived threads. Pick a room, start a Nouk,
+            let it fade when you&apos;re done talking.
           </p>
-
-          {/* How it works card */}
-          <div className="mt-6 w-full max-w-sm rounded-[28px] bg-[var(--card)] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
-            <p className="mb-3 text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-              How Nouk feels
-            </p>
-            <ul className="space-y-2 text-[14px] text-[var(--ink-soft)]">
-              <li>• Start a tiny conversation, not a feed.</li>
-              <li>• Rooms feel like corners of a cozy house.</li>
-              <li>• Threads quietly expire after a short while.</li>
-            </ul>
-          </div>
         </section>
 
-        {/* Right column – Rooms grid with vine background */}
-        <section className="relative flex-1 lg:w-[62%]">
-          {/* Soft vine background (desktop only) */}
-          <svg
-            className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 hidden lg:block opacity-40"
-            viewBox="0 0 800 600"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="vineStroke" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="rgba(148,163,184,0.35)" />
-                <stop offset="100%" stopColor="rgba(148,163,184,0.05)" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M80 520 C 160 440 220 420 280 360 C 340 300 380 260 460 230 C 540 200 620 160 720 120"
-              fill="none"
-              stroke="url(#vineStroke)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeDasharray="4 10"
-            />
-            <path
-              d="M120 140 C 220 180 260 220 300 280 C 340 340 380 380 450 410 C 520 440 600 460 700 480"
-              fill="none"
-              stroke="url(#vineStroke)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeDasharray="3 12"
-            />
-          </svg>
-
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="text-[13px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-              Rooms
-            </h2>
-            <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--card-elevated)] px-3 py-1 text-[11px] font-medium text-[var(--muted)]">
-              Pick a room to begin
-            </span>
-          </header>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <RoomCard
-              href="/room/library"
-              Icon={IconLibrary}
-              title="Library"
-              subtitle="Books, projects, ideas"
-            />
-            <RoomCard
-              href="/room/lounge"
-              Icon={IconLibrary}
-              title="Lounge"
-              subtitle="Soft check-ins, daily life"
-            />
-            <RoomCard
-              href="/room/studio"
-              Icon={IconLibrary}
-              title="Studio"
-              subtitle="Creative work & drafts"
-            />
-            <RoomCard
-              href="/room/theater"
-              Icon={IconTheater}
-              title="Theater"
-              subtitle="Movies, shows, deep dives"
-            />
-            <RoomCard
-              href="/room/game-room"
-              Icon={IconGame}
-              title="Game Room"
-              subtitle="Games, streams, silly stuff"
-            />
-            <RoomCard
-              href="/room/cafe"
-              Icon={IconLibrary}
-              title="Café"
-              subtitle="Open table, anything goes"
-            />
-          </div>
+        {/* How Nouk feels */}
+        <section className="mb-4 rounded-[26px] bg-[var(--card)] px-4 py-4 shadow-soft">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)] text-center">
+            How Nouk feels
+          </p>
+          <ul className="space-y-1 text-[13px] text-[var(--ink-soft)]">
+            <li>• Start a tiny conversation, not a feed.</li>
+            <li>• Rooms feel like corners of a cozy house.</li>
+            <li>• Threads quietly expire after a short while.</li>
+          </ul>
         </section>
-      </div>
 
-      {/* Share a Thought – fixed pill (mobile & desktop) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 flex justify-center pb-5">
-        <div className="pointer-events-auto">
-          <Link
-            href="/share"
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--ink-strong)] px-6 py-3 text-[14px] font-semibold text-[var(--paper)] shadow-[0_18px_40px_rgba(15,23,42,0.35)] hover:brightness-110 active:translate-y-[1px]"
-          >
-            <span>Share a Thought</span>
-            <span className="text-[18px] leading-none">✶</span>
-          </Link>
+        {/* Rooms header */}
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+            Rooms
+          </p>
+          <span className="rounded-full border border-[var(--ring)] px-3 py-1 text-[11px] text-[var(--muted)]">
+            Pick a room to begin
+          </span>
         </div>
+
+        {/* Rooms list */}
+        <section className="space-y-2">
+          {ROOMS.map((room) => (
+            <Link
+              key={room.slug}
+              href={`/r/${room.slug}`}
+              className="flex items-center justify-between rounded-[26px] bg-[var(--card)] px-4 py-3 shadow-soft transition hover:shadow-soft-lg active:scale-[0.99]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(0,0,0,0.03)] text-sm text-[var(--ink-soft)]">
+                  {room.icon}
+                </div>
+                <div>
+                  <div className="text-[15px] font-medium">{room.name}</div>
+                  <div className="text-[12px] text-[var(--muted)]">
+                    {room.description}
+                  </div>
+                </div>
+              </div>
+              <div className="text-[18px] text-[var(--muted)]">›</div>
+            </Link>
+          ))}
+        </section>
+
+        {/* Spacer so list doesn't hide behind pill */}
+        <div className="h-[110px]" />
       </div>
+
+      {/* Docked Share a Thought + modal */}
+      <ShareThought />
     </main>
   );
 }
