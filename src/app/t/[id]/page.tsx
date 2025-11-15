@@ -1,28 +1,45 @@
 // src/app/t/[id]/page.tsx
-import { redirect } from 'next/navigation';
-import { getThreadWithReplies, postReply } from '@/lib/threads'; // adjust if needed
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+
+import { getThread } from "@/lib/threads";
+import { getReplies } from "@/lib/replies";
+import { addReply } from "@/lib/actions";
 
 type ThreadPageProps = {
   params: { id: string };
 };
 
-const DOT_COLORS = ['#f97316', '#0ea5e9', '#22c55e', '#a855f7'];
+const DOT_COLORS = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7"];
 
 export default async function ThreadPage({ params }: ThreadPageProps) {
-  const thread = await getThreadWithReplies(params.id);
+  const thread = await getThread(params.id);
 
   if (!thread) {
-    redirect('/');
+    return notFound();
   }
 
-  // Basic date helpers using native APIs
+  const replies = await getReplies(params.id);
+
   const createdAt = new Date(thread.created_at);
-  const createdLabel = createdAt.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
+  const createdLabel = createdAt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
   });
 
-  const hasSoftPresence = false; // wire this later with Realtime if you want
+  // You can wire this later to Supabase Realtime if you want
+  const hasSoftPresence = false;
+
+  // Server action for posting a reply
+  async function handleReply(formData: FormData) {
+    "use server";
+    const body = (formData.get("body") as string | null)?.trim();
+    if (!body) return;
+
+    await addReply(thread.id, body);
+    revalidatePath(`/t/${thread.id}`);
+  }
 
   return (
     <div className="thread-page-bg min-h-screen text-[var(--ink)]">
@@ -33,15 +50,15 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         {/* header */}
         <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <a
-              href={`/r/${thread.room_slug ?? ''}`}
+            <Link
+              href={`/r/${thread.room.slug ?? ""}`}
               className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(0,0,0,0.03)] text-sm"
             >
               ←
-            </a>
+            </Link>
             <div className="flex flex-col">
               <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
-                {thread.room_name ?? 'Library'}
+                {thread.room.name || thread.room.slug || "Room"}
               </span>
               <h1 className="text-[18px] font-semibold leading-tight">
                 {thread.title}
@@ -72,20 +89,20 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             {thread.title}
           </h2>
 
-          {thread.body && (
+          {"body" in thread && thread.body && (
             <p className="mb-3 text-sm leading-relaxed text-[var(--ink-soft)]">
               {thread.body}
             </p>
           )}
 
-          {thread.link_url && (
+          {"link_url" in thread && thread.link_url && (
             <a
               href={thread.link_url}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center rounded-full border border-[rgba(179,140,97,0.35)] bg-[rgba(255,248,238,0.9)] px-3 py-1 text-xs font-medium text-[var(--accent)]"
             >
-              {thread.link_url.replace(/^https?:\/\//, '')}
+              {thread.link_url.replace(/^https?:\/\//, "")}
             </a>
           )}
 
@@ -96,18 +113,18 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
         {/* replies */}
         <main className="flex-1 space-y-3 pb-4">
-          {thread.replies.length > 0 && (
+          {replies.length > 0 && (
             <p className="mb-1 text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">
               Today
             </p>
           )}
 
-          {thread.replies.map((reply: any, index: number) => {
+          {replies.map((reply, index) => {
             const color = DOT_COLORS[index % DOT_COLORS.length];
             const replyDate = new Date(reply.created_at);
-            const timeLabel = replyDate.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
+            const timeLabel = replyDate.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
             });
 
             return (
@@ -127,7 +144,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
             );
           })}
 
-          {thread.replies.length === 0 && (
+          {replies.length === 0 && (
             <p className="ml-1 mt-2 text-[12px] text-[var(--muted)]">
               No replies yet. You can leave this Nouk to fade quietly, or say
               something back.
@@ -137,7 +154,7 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
 
         {/* reply composer */}
         <section className="reply-input-card mt-2 border border-[rgba(179,140,97,0.15)] px-3 py-3">
-          <form action={postReply.bind(null, thread.id)} className="flex flex-col gap-2">
+          <form action={handleReply} className="flex flex-col gap-2">
             <div className="reply-input-field flex-1 px-3 py-2">
               <textarea
                 name="body"
