@@ -1,149 +1,109 @@
 // src/app/page.tsx
-import Link from "next/link";
-import ShareThoughtButton from "@/components/ShareThought";
-import { supabase } from "@/lib/supabase";
+import Link from 'next/link';
+import ShareThoughtButton from '@/components/ShareThought';
 
-// Order that rooms appear on the homepage
-const ROOM_SLUG_ORDER = [
-  "sunroom",
-  "living-room",
-  "garden",
-  "lantern-room",
-  "observatory",
-  "library",
-];
-
-type DbRoom = {
-  id: string;
+type RoomCard = {
   slug: string;
   name: string;
-  description: string | null;
-  is_active?: boolean | null;
+  description: string;
 };
 
-const ROOM_META: Record<
-  string,
-  { label: string; tagline: string; emoji: string }
-> = {
-  "sunroom": {
-    label: "Sunroom",
-    emoji: "☀️",
-    tagline: "Light, everyday check-ins and passing thoughts.",
+const ROOM_CARDS: RoomCard[] = [
+  {
+    slug: 'sunroom',
+    name: 'Sunroom',
+    description: 'Light, everyday check-ins and passing thoughts.',
   },
-  "living-room": {
-    label: "Living Room",
-    emoji: "🛋️",
-    tagline: "Cozy conversation and shared moments with others.",
+  {
+    slug: 'living-room',
+    name: 'Living Room',
+    description: 'Cozy conversation and shared moments with others.',
   },
-  "garden": {
-    label: "Garden",
-    emoji: "🌿",
-    tagline: "Gentle growth, intentions, and small steps forward.",
+  {
+    slug: 'garden',
+    name: 'Garden',
+    description: 'Gentle growth, intentions, and small steps forward.',
   },
-  "lantern-room": {
-    label: "Lantern Room",
-    emoji: "🔮",
-    tagline: "Heavier feelings and emotional processing in a soft way.",
+  {
+    slug: 'lantern-room',
+    name: 'Lantern Room',
+    description: 'Heavier feelings and emotional processing in a safe glow.',
   },
-  "observatory": {
-    label: "Observatory",
-    emoji: "🌙",
-    tagline: "Late-night thoughts, wonder, and abstract ideas.",
+  {
+    slug: 'observatory',
+    name: 'Observatory',
+    description: 'Late-night thoughts, wonder, and abstract ideas.',
   },
-  "library": {
-    label: "Library",
-    emoji: "📖",
-    tagline: "Quiet prompts, journaling, and thoughtful writing.",
+  {
+    slug: 'library',
+    name: 'Library',
+    description: 'Quiet prompts, journaling, and thoughtful writing.',
   },
-};
+];
 
-export default async function HomePage() {
-  // Load rooms from Supabase
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("id, slug, name, description, is_active");
-
-  const dbRooms: DbRoom[] = data ?? [];
-
-  if (error) {
-    console.error("[HomePage] Error loading rooms", error);
+function roomIcon(slug: string) {
+  switch (slug) {
+    case 'sunroom':
+      return '🌤️';
+    case 'living-room':
+      return '🛋️';
+    case 'garden':
+      return '🌿';
+    case 'lantern-room':
+      return '🔮';
+    case 'observatory':
+      return '🌙';
+    case 'library':
+      return '📖';
+    default:
+      return '📎';
   }
+}
 
-  const rooms = dbRooms
-    .filter((r) => r.is_active ?? true)
-    .sort((a, b) => {
-      const ia = ROOM_SLUG_ORDER.indexOf(a.slug);
-      const ib = ROOM_SLUG_ORDER.indexOf(b.slug);
-      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-    })
-    .map((room) => {
-      const meta = ROOM_META[room.slug];
-      return {
-        ...room,
-        label: meta?.label ?? room.name,
-        emoji: meta?.emoji ?? "📎",
-        tagline: meta?.tagline ?? room.description ?? "",
-      };
-    });
-
+export default function HomePage() {
   return (
     <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-4 pt-6">
-        {/* Hero */}
-        <header className="flex flex-col items-center text-center">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--card)] shadow-[0_18px_40px_rgba(15,23,42,0.35)]">
-            <span className="text-2xl">🌱</span>
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-6 pt-10">
+        {/* Header */}
+        <header className="mb-6 flex flex-col items-center text-center">
+          <div className="mb-4 rounded-full bg-[var(--badge)] p-4 shadow-soft-lg">
+            <span className="text-3xl">🌱</span>
           </div>
-          <h1 className="text-[30px] font-semibold tracking-tight text-[var(--ink-strong)]">
-            Nouk
-          </h1>
-          <p className="mt-2 max-w-sm text-[14px] leading-snug text-[var(--muted-strong)]">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight">Nouk</h1>
+          <p className="text-sm leading-relaxed text-[var(--muted-strong)]">
             A cozy space for short-lived threads. Say something small, let it
             breathe, then let it fade.
           </p>
         </header>
 
         {/* Rooms list */}
-        <section className="mt-4 flex-1">
-          <div className="space-y-3">
-            {rooms.map((room) => (
-              <Link
-                key={room.id}
-                href={`/room/${room.slug}?title=${encodeURIComponent(
-                  room.label,
-                )}`}
-                className="block rounded-[26px] bg-[var(--card)] px-4 py-3 shadow-soft-lg transition-transform hover:-translate-y-[1px] hover:shadow-soft-xl active:translate-y-[0px]"
-              >
+        <section className="flex-1 space-y-3">
+          {ROOM_CARDS.map((room) => (
+            <Link key={room.slug} href={`/room/${room.slug}`} className="block">
+              <article className="flex items-center justify-between rounded-[24px] bg-[var(--card)] px-4 py-3 shadow-soft-lg transition-transform active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {/* Icon chip */}
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--surface)] shadow-[0_8px_20px_rgba(15,23,42,0.18)] text-xl">
-                    {room.emoji}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface)] shadow-inner-soft">
+                    <span className="text-xl">{roomIcon(room.slug)}</span>
                   </div>
-
-                  {/* Text */}
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-center justify-between gap-2">
-                      <h2 className="text-[15px] font-semibold text-[var(--ink-strong)]">
-                        {room.label}
-                      </h2>
-                      <span className="text-[18px] text-[var(--muted)]">
-                        &rsaquo;
-                      </span>
-                    </div>
-                    <p className="mt-[2px] text-[13px] leading-snug text-[var(--muted-strong)]">
-                      {room.tagline}
+                  <div>
+                    <h2 className="text-base font-semibold text-[var(--ink)]">
+                      {room.name}
+                    </h2>
+                    <p className="text-xs text-[var(--muted-strong)]">
+                      {room.description}
                     </p>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+                <span className="text-[var(--muted)]">›</span>
+              </article>
+            </Link>
+          ))}
         </section>
 
-        {/* CTA dock */}
-        <div className="mt-4">
+        {/* CTA */}
+        <footer className="mt-5">
           <ShareThoughtButton compact />
-        </div>
+        </footer>
       </div>
     </main>
   );
