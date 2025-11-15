@@ -1,64 +1,107 @@
 // src/components/ShareThought.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase, getOrCreateUserToken } from "@/lib/supabase-browser";
 
 type Room = {
+  id: string;
   slug: string;
   name: string;
-  description?: string;
+  description: string | null;
+  is_active: boolean;
 };
-
-const ROOM_PRESETS: Room[] = [
-  { slug: 'library',   name: 'Library',   description: 'Books, projects, ideas' },
-  { slug: 'kitchen',   name: 'Kitchen',   description: 'Recipes, cooking, food talk' },
-  { slug: 'theater',   name: 'Theater',   description: 'Movies & TV' },
-  { slug: 'game-room', name: 'Game Room', description: 'Games, music & hobbies' },
-  { slug: 'garage',    name: 'Garage',    description: 'DIY, tools, builds' },
-  { slug: 'study',     name: 'Study',     description: 'Focus, learning, planning' },
-];
 
 export default function ShareThought() {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
-  const [room, setRoom] = useState<Room | null>(null);
-  const [title, setTitle] = useState('');
-  const [link, setLink] = useState('');
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [roomId, setRoomId] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  // Lock body scroll while modal is open
+  // load active rooms from Supabase
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = prev || '';
-    }
-    return () => {
-      document.body.style.overflow = prev || '';
-    };
-  }, [open]);
+    let mounted = true;
 
-  const canStart = !!room;
+    supabase
+      .from("rooms")
+      .select("id,slug,name,description,is_active")
+      .eq("is_active", true)
+      .order("name", { ascending: true })
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          setErr(error.message);
+        } else if (data) {
+          setRooms(data);
+          if (data.length && !roomId) {
+            setRoomId(data[0].id);
+          }
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [roomId]);
+
+  const selectedRoom = useMemo(
+    () => rooms.find((r) => r.id === roomId) ?? null,
+    [rooms, roomId]
+  );
+
+  const canStart =
+    !!selectedRoom && title.trim().length > 0 && !loading && !err;
+
+  async function createThread() {
+    if (!selectedRoom || title.trim().length === 0) return;
+    setLoading(true);
+    setErr(null);
+
+    try {
+      const user_token = getOrCreateUserToken();
+
+      const { data, error } = await supabase
+        .from("threads")
+        .insert({
+          room_id: selectedRoom.id,
+          title: title.trim(),
+          link_url: link.trim() || null,
+          user_token,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      if (!data?.id) throw new Error("No thread id returned");
+
+      // close modal, go straight to the new thread
+      setOpen(false);
+      setTitle("");
+      setLink("");
+      router.push(`/t/${data.id}`);
+    } catch (e: any) {
+      console.error("Error creating thread:", e);
+      setErr(e?.message || "Something went wrong starting your Nouk.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  const handleStart = () => {
-    if (!room) return;
-
-    const dest = `/room/${room.slug}?title=${encodeURIComponent(
-      title.trim(),
-    )}&link=${encodeURIComponent(link.trim())}`;
-
-    router.push(dest);
+  const handleClose = () => {
+    if (loading) return;
     setOpen(false);
   };
 
   return (
     <>
-      {/* Bottom docked CTA – visible only when modal is closed */}
+      {/* Bottom pill CTA */}
       {!open && (
         <button
           type="button"
@@ -69,87 +112,117 @@ export default function ShareThought() {
         </button>
       )}
 
-      {/* Centered modal sheet */}
+      {/* Backdrop + modal */}
       {open && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-[rgba(0,0,0,0.32)] backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center bg-[rgba(0,0,0,0.35)] backdrop-blur-sm"
           onClick={handleClose}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-[min(640px,92vw)] rounded-2xl border border-[var(--ring)] bg-[var(--card)] p-5 shadow-soft animate-modalIn"
           >
-            <h2 className="mb-1 text-[22px] font-serif text-ink">Start a New Nouk</h2>
-            <p className="mb-4 text-[13px] text-muted">Find your cozy corner.</p>
-
-            {/* Step 1 – room grid */}
-            <label className="mb-2 block text-[14px] text-muted">
-              1) Where do you want to post?
-            </label>
-            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {ROOM_PRESETS.map((r) => {
-                const selected = room?.slug === r.slug;
-                return (
-                  <button
-                    key={r.slug}
-                    type="button"
-                    onClick={() => setRoom(r)}
-                    className={`rounded-xl border px-3 py-2 text-left text-[13px] transition
-                      ${
-                        selected
-                          ? 'border-[var(--accent)] bg-[var(--card)] shadow-soft'
-                          : 'border-[var(--ring)] bg-[var(--card)] hover:border-[var(--accent)]'
-                      }`}
-                  >
-                    <div className="font-medium text-ink">{r.name}</div>
-                    {r.description && (
-                      <div className="text-[11px] text-[var(--muted)]">
-                        {r.description}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+            {/* Header */}
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(234,122,59,0.16)]">
+                  <span className="text-[18px] text-[var(--accent)]">🌱</span>
+                </div>
+                <h2 className="text-[22px] font-serif text-[var(--ink)]">
+                  Start a New Nouk
+                </h2>
+                <p className="mt-1 text-[13px] text-[var(--muted)]">
+                  Find your cozy corner.
+                </p>
+              </div>
             </div>
 
-            {/* Step 2 – bigger inputs */}
-            <label className="mb-2 block text-[14px] text-[var(--ink)]">
-              2) What’s the thread about? (optional link/topic)
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Say something small to start…"
-              className="mb-3 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-3 text-[14px] outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            />
-            <input
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              placeholder="Optional link (YouTube, Spotify, article…)"
-              className="mb-5 w-full rounded-xl border border-[var(--ring)] bg-white/85 px-3 py-3 text-[14px] outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            />
+            {/* Step 1 – room picker */}
+            <div className="mb-5">
+              <p className="mb-2 text-[14px] font-medium text-[var(--ink)]">
+                1) Where do you want to post?
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {rooms.map((r) => {
+                  const selected = r.id === roomId;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setRoomId(r.id)}
+                      className={`rounded-xl border px-3 py-2 text-left text-[13px] transition ${
+                        selected
+                          ? "border-[var(--accent)] bg-[rgba(255,250,243,0.96)] shadow-soft"
+                          : "border-[var(--ring)] bg-[rgba(255,250,243,0.86)] hover:border-[var(--accent)]"
+                      }`}
+                    >
+                      <div className="font-medium text-[var(--ink)]">
+                        {r.name}
+                      </div>
+                      {r.description && (
+                        <div className="text-[11px] text-[var(--muted)]">
+                          {r.description}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Step 2 – seed + link */}
+            <div className="mb-4">
+              <p className="mb-2 text-[14px] font-medium text-[var(--ink)]">
+                2) What&apos;s the thread about?{" "}
+                <span className="text-[11px] font-normal text-[var(--muted)]">
+                  (optional link/topic)
+                </span>
+              </p>
+              <textarea
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                rows={3}
+                placeholder="Say something small to start…"
+                className="mb-2 w-full resize-none rounded-2xl border border-[var(--ring)] bg-[rgba(250,240,226,0.94)] px-3 py-3 text-[14px] outline-none placeholder:text-[var(--muted)] focus:ring-2 focus:ring-[var(--accent)]"
+              />
+              <input
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="Optional link (YouTube, TikTok, article…)"
+                className="w-full rounded-2xl border border-[var(--ring)] bg-[rgba(250,240,226,0.94)] px-3 py-2 text-[13px] outline-none placeholder:text-[var(--muted)] focus:ring-2 focus:ring-[var(--accent)]"
+              />
+              <p className="mt-2 text-[11px] text-[var(--muted)]">
+                Tiny thoughts or longer ideas are both welcome.
+              </p>
+              {err && (
+                <p className="mt-2 text-[11px] text-red-600">
+                  {err}
+                </p>
+              )}
+            </div>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2 text-[14px] active:scale-[0.97]"
+                className="rounded-xl border border-[var(--ring)] bg-[var(--card)] px-4 py-2 text-[13px] text-[var(--ink-soft)] active:scale-[0.97]"
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
                 type="button"
+                onClick={createThread}
                 disabled={!canStart}
-                onClick={handleStart}
                 className={[
-                  'rounded-xl px-4 py-2 text-[14px] font-semibold transition',
+                  "rounded-xl px-4 py-2 text-[13px] font-semibold transition",
                   canStart
-                    ? 'bg-[var(--accent)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.25)] active:translate-y-[1px] active:shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
-                    : 'bg-[var(--accent)]/50 text-white/70 opacity-70 cursor-not-allowed',
-                ].join(' ')}
+                    ? "bg-[var(--accent)] text-white shadow-[0_6px_18px_rgba(234,122,59,0.55)] active:translate-y-[1px] active:shadow-[0_4px_12px_rgba(234,122,59,0.65)]"
+                    : "bg-[var(--accent)]/50 text-white/70 opacity-70 cursor-not-allowed",
+                ].join(" ")}
               >
-                Start Nouk
+                {loading ? "Starting…" : "Start Nouk"}
               </button>
             </div>
           </div>
