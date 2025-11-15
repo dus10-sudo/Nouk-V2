@@ -11,42 +11,40 @@ export default function BottomNav() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
-      <div className="mx-auto max-w-lg px-4 pb-4">
+      <div className="mx-auto max-w-lg px-3 pb-3">
         <div
           className="
             pointer-events-auto
             rounded-full
+            bg-[var(--paper)]/95
             border border-[color-mix(in_srgb,var(--muted)_22%,transparent)]
-            bg-[var(--paper)]
-            shadow-[0_-4px_16px_rgba(15,23,42,0.22)]
+            shadow-[0_-4px_12px_rgba(15,23,42,0.18)]
+            backdrop-blur-sm
           "
         >
-          <div className="flex items-center justify-between px-4 py-1.5">
-
+          <div className="flex items-center gap-2 px-4 py-1.5">
             {/* LEFT: Nouk label */}
-            <div className="w-20 flex justify-start">
+            <div className="w-16 flex justify-start">
               <button
                 type="button"
                 onClick={() => router.push('/')}
                 className="
                   text-[12px]
                   font-semibold
-                  tracking-[0.18em]
                   text-[var(--muted-strong)]
-                  whitespace-nowrap
                 "
               >
-                N O U K
+                Nouk
               </button>
             </div>
 
-            {/* CENTER CTA */}
+            {/* CENTER: CTA */}
             <div className="flex flex-1 justify-center">
               <ShareThoughtButton />
             </div>
 
-            {/* RIGHT: Sprout */}
-            <div className="w-20 flex justify-end">
+            {/* RIGHT: Sprout home/scroll */}
+            <div className="w-16 flex justify-end">
               <button
                 type="button"
                 onClick={() =>
@@ -63,8 +61,12 @@ export default function BottomNav() {
                 🌱
               </button>
             </div>
-
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}          </div>
         </div>
       </div>
     </div>
