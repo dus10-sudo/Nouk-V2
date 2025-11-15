@@ -1,226 +1,299 @@
+// src/components/ShareThought.tsx
 'use client';
 
-import { useState, useTransition, FormEvent } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser';
+import { getOrCreateUserToken } from '@/lib/userToken';
+
+type Room = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+};
+
+const ROOM_SLUG_ORDER = [
+  'sunroom',
+  'living-room',
+  'garden',
+  'lantern-room',
+  'observatory',
+  'library',
+] as const;
+
+type FormState = {
+  roomSlug: string | null;
+  title: string;
+  link: string;
+  submitting: boolean;
+  error: string | null;
+};
 
 type ShareThoughtProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-type RoomChoice = {
-  id: string;
-  name: string;
-  description: string;
-};
-
-/**
- * Current active rooms in the app.
- * These IDs are from your `rooms` table.
- */
-const ROOM_CHOICES: RoomChoice[] = [
-  {
-    id: 'd8b59522-3db4-4468-8191-75a8b490966a',
-    name: 'Sunroom',
-    description: 'For light check ins, small wins, and passing thoughts.',
-  },
-  {
-    id: '10286a79-94df-45a2-9654-d3c48d4e2ee4',
-    name: 'Living Room',
-    description: 'For relaxed conversation, shared moments, and company.',
-  },
-  {
-    id: '30d4c7f3-5372-4386-8915-2e7a46fcb7f0',
-    name: 'Garden',
-    description: 'For intentions, tiny steps, and gentle personal growth.',
-  },
-  {
-    id: '6cde5c29-e87d-47e7-9554-b41ed3bb303d',
-    name: 'Lantern Room',
-    description: 'For heavy feelings, venting, and emotional processing.',
-  },
-  {
-    id: '7cca5abb-cc40-48ce-9fb9-b0b41d7b67a1',
-    name: 'Observatory',
-    description: 'For late night thoughts, big questions, and wonder.',
-  },
-  {
-    id: '3852a38b-ba1a-4d71-8aa1-a89015194023',
-    name: 'Library',
-    description: 'For journaling, prompts, and more thoughtful writing.',
-  },
-];
-
 export default function ShareThought({ open, onOpenChange }: ShareThoughtProps) {
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(
-    ROOM_CHOICES[0]?.id ?? null
-  );
-  const [title, setTitle] = useState('');
-  const [link, setLink] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [state, setState] = useState<FormState>({
+    roomSlug: null,
+    title: '',
+    link: '',
+    submitting: false,
+    error: null,
+  });
 
-  const handleClose = () => {
-    // reset on close
-    setError(null);
-    setTitle('');
-    setLink('');
-    setSelectedRoomId(ROOM_CHOICES[0]?.id ?? null);
-    onOpenChange(false);
-  };
+  // Load rooms once on mount
+  useEffect(() => {
+    let cancelled = false;
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!selectedRoomId) {
-      setError('Please choose a room.');
-      return;
-    }
-    if (!title.trim()) {
-      setError("Say something small to start your Nouk.");
-      return;
-    }
+    async function loadRooms() {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, slug, name, description');
 
-    setError(null);
-
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/threads', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            roomId: selectedRoomId,
-            title: title.trim(),
-            link: link.trim() || null,
-          }),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Request failed with status ${res.status}`);
-        }
-
-        // Success: close + reset
-        handleClose();
-      } catch (err) {
-        console.error('Error starting Nouk:', err);
-        setError('Something went wrong starting your Nouk. Please try again.');
+      if (error) {
+        console.error('[ShareThought] Error loading rooms', error);
+        return;
       }
-    });
-  };
+
+      if (!data || cancelled) return;
+
+      const ordered = [...data].sort((a, b) => {
+        const ia = ROOM_SLUG_ORDER.indexOf(a.slug as any);
+        const ib = ROOM_SLUG_ORDER.indexOf(b.slug as any);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      });
+
+      setRooms(ordered);
+      setState((prev) => ({
+        ...prev,
+        roomSlug: ordered[0]?.slug ?? null,
+      }));
+    }
+
+    loadRooms();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedRoom =
+    rooms.find((r) => r.slug === state.roomSlug) ?? null;
+
+  async function handleSubmit() {
+    if (!selectedRoom) {
+      setState((prev) => ({
+        ...prev,
+        error: 'Pick a room first.',
+      }));
+      return;
+    }
+
+    const trimmedTitle = state.title.trim();
+    const trimmedLink = state.link.trim();
+
+    if (!trimmedTitle && !trimmedLink) {
+      setState((prev) => ({
+        ...prev,
+        error: 'Say at least a few words, or paste a link.',
+      }));
+      return;
+    }
+
+    setState((prev) => ({ ...prev, submitting: true, error: null }));
+
+    try {
+      const user_token = getOrCreateUserToken();
+
+      const { data, error } = await supabase
+        .from('threads')
+        .insert({
+          room_id: selectedRoom.id,
+          title: trimmedTitle || 'Untitled Nouk',
+          link_url: trimmedLink || null,
+          user_token,
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('[ShareThought] Error creating thread', error);
+        setState((prev) => ({
+          ...prev,
+          submitting: false,
+          error: 'Something went wrong. Please try again.',
+        }));
+        return;
+      }
+
+      if (!data?.id) {
+        setState((prev) => ({
+          ...prev,
+          submitting: false,
+          error: 'Could not start the Nouk. Please try again.',
+        }));
+        return;
+      }
+
+      // Close sheet via parent-controlled state
+      onOpenChange(false);
+
+      // Reset form
+      setState({
+        roomSlug: selectedRoom.slug,
+        title: '',
+        link: '',
+        submitting: false,
+        error: null,
+      });
+
+      // Navigate to the new thread
+      router.push(`/t/${data.id}`);
+    } catch (err) {
+      console.error('[ShareThought] Unexpected error', err);
+      setState((prev) => ({
+        ...prev,
+        submitting: false,
+        error: 'Something went wrong. Please try again.',
+      }));
+    }
+  }
+
+  if (!open) {
+    // Nothing rendered when closed
+    return null;
+  }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto border-none">
-        <SheetHeader className="text-left">
-          <SheetTitle className="text-base font-semibold tracking-wide text-neutral-800">
-            Start a Nouk
-          </SheetTitle>
-          <SheetDescription className="text-sm text-neutral-600">
-            Find a quiet corner for this, then let it breathe for a little while.
-          </SheetDescription>
-        </SheetHeader>
-
-        <form onSubmit={handleSubmit} className="mt-4 space-y-6">
-          {/* Room picker */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-              1) Where do you want to post?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ROOM_CHOICES.map((room) => {
-                const selected = room.id === selectedRoomId;
-                return (
-                  <button
-                    key={room.id}
-                    type="button"
-                    onClick={() => setSelectedRoomId(room.id)}
-                    className={[
-                      'rounded-full border text-sm px-3 py-2 text-left transition-colors',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-500 focus-visible:ring-offset-[#f3e4cf]',
-                      selected
-                        ? 'border-amber-500 bg-amber-50 text-neutral-900'
-                        : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100',
-                    ].join(' ')}
-                    aria-pressed={selected}
-                  >
-                    {room.name}
-                  </button>
-                );
-              })}
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(0,0,0,0.45)] sm:items-center">
+      <div className="w-full max-w-md rounded-t-[28px] bg-[var(--card)] px-5 pb-5 pt-4 shadow-[0_-18px_55px_rgba(15,23,42,0.6)] sm:rounded-[28px]">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted)]">
+              START A NOUK
             </div>
-            {selectedRoomId && (
-              <p className="mt-1 text-xs text-neutral-600">
-                {
-                  ROOM_CHOICES.find((r) => r.id === selectedRoomId)
-                    ?.description
-                }
-              </p>
-            )}
-          </div>
-
-          {/* Text fields */}
-          <div className="space-y-3">
-            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-              2) What&apos;s the thread about?
-              <input
-                type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3e4cf]"
-                placeholder="Say something small to start…"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={240}
-              />
-            </label>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                Optional link
-              </label>
-              <input
-                type="url"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3e4cf]"
-                placeholder="YouTube, Spotify, article…"
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-              />
+            <div className="text-[15px] text-[var(--ink)]">
+              Find a quiet corner for this.
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-full px-3 py-1 text-[13px] text-[var(--muted)] hover:bg-black/5"
+          >
+            Close
+          </button>
+        </div>
 
-          {/* Error + submit */}
-          {error && (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
+        {/* Room selector */}
+        <div className="mb-2">
+          <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            1) Where do you want to post?
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {rooms.map((room) => {
+              const isSelected = room.slug === state.roomSlug;
+              return (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      roomSlug: room.slug,
+                      error:
+                        prev.error === 'Pick a room first.'
+                          ? null
+                          : prev.error,
+                    }))
+                  }
+                  className={`flex items-center justify-center rounded-[18px] border px-3 py-2 text-[14px] ${
+                    isSelected
+                      ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
+                      : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]'
+                  }`}
+                >
+                  {room.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selected room meaning */}
+          {selectedRoom && (
+            <p className="mt-2 text-[13px] leading-snug text-[var(--muted-strong)]">
+              <span className="font-semibold">
+                {selectedRoom.name}
+              </span>{' '}
+              · {selectedRoom.description}
             </p>
           )}
+        </div>
 
-          <div className="flex gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              className="flex-1 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
-              onClick={handleClose}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 rounded-xl bg-amber-600 text-sm font-semibold text-white hover:bg-amber-700"
-              disabled={isPending}
-            >
-              {isPending ? 'Starting…' : 'Start Nouk'}
-            </Button>
+        {/* Title + link inputs */}
+        <div className="mb-2">
+          <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
+            2) What&apos;s the thread about?
           </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Say something small to start…"
+              value={state.title}
+              onChange={(e) =>
+                setState((prev) => ({
+                  ...prev,
+                  title: e.target.value,
+                }))
+              }
+              className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+            />
+            <input
+              type="url"
+              placeholder="Optional link (YouTube, Spotify, article…)"
+              value={state.link}
+              onChange={(e) =>
+                setState((prev) => ({
+                  ...prev,
+                  link: e.target.value,
+                }))
+              }
+              className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+            />
+          </div>
+        </div>
+
+        {/* Error */}
+        {state.error && (
+          <div className="mb-2 text-[13px] text-red-600">
+            {state.error}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex-1 rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-transparent px-3 py-2 text-[14px] text-[var(--muted-strong)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={state.submitting}
+            className="flex-1 rounded-[18px] bg-[var(--accent)] px-3 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_12px_30px_rgba(15,23,42,0.55)] disabled:opacity-60"
+          >
+            {state.submitting ? 'Starting…' : 'Start Nouk'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
-}
+            }
