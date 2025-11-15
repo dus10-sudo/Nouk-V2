@@ -1,9 +1,18 @@
-// src/components/ShareThought.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase, getOrCreateUserToken } from '@/lib/supabase-browser';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase-browser";
+
+// Order to display rooms in the picker
+const ROOM_SLUG_ORDER = [
+  "sunroom",
+  "living-room",
+  "garden",
+  "lantern-room",
+  "observatory",
+  "library",
+];
 
 type Room = {
   id: string;
@@ -11,15 +20,6 @@ type Room = {
   name: string;
   description: string | null;
 };
-
-const ROOM_SLUG_ORDER = [
-  'library',
-  'lounge',
-  'studio',
-  'theater',
-  'game-room',
-  'cafe',
-];
 
 type FormState = {
   roomSlug: string | null;
@@ -29,14 +29,30 @@ type FormState = {
   error: string | null;
 };
 
-export default function ShareThoughtButton() {
+// Simple browser-side token helper so each browser gets a stable anonymous id
+function getOrCreateUserToken(): string {
+  if (typeof window === "undefined") {
+    // SSR fallback – not really used, but keeps types happy
+    return crypto.randomUUID();
+  }
+
+  const STORAGE_KEY = "nouk_user_token";
+  const existing = window.localStorage.getItem(STORAGE_KEY);
+  if (existing) return existing;
+
+  const fresh = crypto.randomUUID();
+  window.localStorage.setItem(STORAGE_KEY, fresh);
+  return fresh;
+}
+
+export default function ShareThoughtButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<FormState>({
     roomSlug: null,
-    title: '',
-    link: '',
+    title: "",
+    link: "",
     submitting: false,
     error: null,
   });
@@ -47,11 +63,11 @@ export default function ShareThoughtButton() {
 
     async function loadRooms() {
       const { data, error } = await supabase
-        .from('rooms')
-        .select('id, slug, name, description');
+        .from("rooms")
+        .select("id, slug, name, description");
 
       if (error) {
-        console.error('[ShareThought] Error loading rooms', error);
+        console.error("[ShareThought] Error loading rooms", error);
         return;
       }
 
@@ -77,14 +93,13 @@ export default function ShareThoughtButton() {
     };
   }, []);
 
-  const selectedRoom =
-    rooms.find((r) => r.slug === state.roomSlug) ?? null;
+  const selectedRoom = rooms.find((r) => r.slug === state.roomSlug) ?? null;
 
   async function handleSubmit() {
     if (!selectedRoom) {
       setState((prev) => ({
         ...prev,
-        error: 'Pick a room first.',
+        error: "Pick a room first.",
       }));
       return;
     }
@@ -95,7 +110,7 @@ export default function ShareThoughtButton() {
     if (!trimmedTitle && !trimmedLink) {
       setState((prev) => ({
         ...prev,
-        error: 'Say at least a few words, or paste a link.',
+        error: "Say at least a few words, or paste a link.",
       }));
       return;
     }
@@ -106,22 +121,22 @@ export default function ShareThoughtButton() {
       const user_token = getOrCreateUserToken();
 
       const { data, error } = await supabase
-        .from('threads')
+        .from("threads")
         .insert({
           room_id: selectedRoom.id,
-          title: trimmedTitle || 'Untitled Nouk',
-          link_url: trimmedLink || null, // ✅ match your schema
-          user_token,                    // ✅ NOT NULL column
+          title: trimmedTitle || "Untitled Nouk",
+          link_url: trimmedLink || null,
+          user_token,
         })
-        .select('id')
+        .select("id")
         .single();
 
       if (error) {
-        console.error('[ShareThought] Error creating thread', error);
+        console.error("[ShareThought] Error creating thread", error);
         setState((prev) => ({
           ...prev,
           submitting: false,
-          error: 'Something went wrong. Please try again.',
+          error: "Something went wrong. Please try again.",
         }));
         return;
       }
@@ -130,39 +145,41 @@ export default function ShareThoughtButton() {
         setState((prev) => ({
           ...prev,
           submitting: false,
-          error: 'Could not start the Nouk. Please try again.',
+          error: "Could not start the Nouk. Please try again.",
         }));
         return;
       }
 
-      // Close modal and go to the new thread
+      // Close modal, reset, and go to the new thread
       setOpen(false);
       setState({
         roomSlug: selectedRoom.slug,
-        title: '',
-        link: '',
+        title: "",
+        link: "",
         submitting: false,
         error: null,
       });
 
       router.push(`/t/${data.id}`);
     } catch (err) {
-      console.error('[ShareThought] Unexpected error', err);
+      console.error("[ShareThought] Unexpected error", err);
       setState((prev) => ({
         ...prev,
         submitting: false,
-        error: 'Something went wrong. Please try again.',
+        error: "Something went wrong. Please try again.",
       }));
     }
   }
 
   return (
     <>
-      {/* Docked main button */}
+      {/* Docked / compact main button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-4 text-[15px] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform"
+        className={`flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 text-[15px] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform ${
+          compact ? "py-3" : "py-4"
+        }`}
       >
         Share a Thought
       </button>
@@ -171,6 +188,7 @@ export default function ShareThoughtButton() {
       {open && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-[rgba(0,0,0,0.45)] sm:items-center">
           <div className="w-full max-w-md rounded-t-[28px] bg-[var(--card)] px-5 pb-5 pt-4 shadow-[0_-18px_55px_rgba(15,23,42,0.6)] sm:rounded-[28px]">
+            {/* Header */}
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted)]">
@@ -206,15 +224,15 @@ export default function ShareThoughtButton() {
                           ...prev,
                           roomSlug: room.slug,
                           error:
-                            prev.error === 'Pick a room first.'
+                            prev.error === "Pick a room first."
                               ? null
                               : prev.error,
                         }))
                       }
                       className={`flex items-center justify-center rounded-[18px] border px-3 py-2 text-[14px] ${
                         isSelected
-                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                          : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]'
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+                          : "border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]"
                       }`}
                     >
                       {room.name}
@@ -251,7 +269,7 @@ export default function ShareThoughtButton() {
               </div>
             </div>
 
-            {/* Error */}
+            {/* Error message */}
             {state.error && (
               <div className="mb-2 text-[13px] text-red-600">
                 {state.error}
@@ -273,24 +291,12 @@ export default function ShareThoughtButton() {
                 disabled={state.submitting}
                 className="flex-1 rounded-[18px] bg-[var(--accent)] px-3 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_12px_30px_rgba(15,23,42,0.55)] disabled:opacity-60"
               >
-                {state.submitting ? 'Starting…' : 'Start Nouk'}
+                {state.submitting ? "Starting…" : "Start Nouk"}
               </button>
             </div>
           </div>
         </div>
       )}
     </>
-  );
-                  }
-export default function ShareThoughtButton({ compact = false }) {
-  return (
-    <button
-      className={`w-full rounded-[24px] bg-[var(--cta)] text-[var(--cta-ink)] font-medium transition-all shadow-soft-lg
-        ${compact ? "py-3 text-[15px]" : "py-4 text-[16px]"}
-      `}
-      onClick={openModal}
-    >
-      Share a Thought
-    </button>
   );
 }
