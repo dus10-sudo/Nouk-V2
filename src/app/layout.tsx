@@ -1,19 +1,29 @@
-import "./globals.css";
-import { Inter, Playfair_Display } from "next/font/google";
+import './globals.css';
+import type { Metadata } from 'next';
+import BottomNav from '@/components/BottomNav';
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
-
-export const metadata = {
-  title: "Nouk",
-  description: "Cozy, low-stress conversations.",
+export const metadata: Metadata = {
+  title: 'Nouk',
+  description: 'A quiet place for short-lived thoughts.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-nouk-bg text-nouk-ink`}>
-        {children}
+      <body className="bg-[var(--paper)] text-[var(--ink)]">
+
+        {/* Page content */}
+        <div className="pb-24"> 
+          {children}
+        </div>
+
+        {/* Fixed bottom bar */}
+        <BottomNav />
+
       </body>
     </html>
   );
