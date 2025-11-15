@@ -52,8 +52,9 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[var(--paper)]">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-8 pt-8">
+
         {/* Header */}
-        <header className="mb-6 flex flex-col items-center text-center">
+        <header className="mb-7 flex flex-col items-center text-center">
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--card)] shadow-[0_18px_45px_rgba(15,23,42,0.35)]">
             <span className="text-3xl" aria-hidden="true">
               🌱
@@ -83,29 +84,27 @@ export default function HomePage() {
                 href={`/r/${room.slug}`}
                 className="block rounded-[26px] bg-[var(--card)] shadow-[0_18px_45px_rgba(15,23,42,0.22)] transition-transform active:scale-[0.98]"
               >
-                <div className="flex min-h-[80px] items-center gap-3 px-4 py-3">
-                  {/* Icon circle */}
+                <div className="flex min-h-[90px] items-center gap-3 px-4 py-3">
+                  {/* Icon */}
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[var(--surface)] shadow-[0_10px_25px_rgba(15,23,42,0.18)]">
                     <span className="text-xl" aria-hidden="true">
                       {room.icon}
                     </span>
                   </div>
 
-                  {/* Text */}
+                  {/* Title + description */}
                   <div className="flex flex-1 flex-col">
                     <div className="text-[15px] font-semibold text-[var(--ink)]">
                       {room.name}
                     </div>
-                    <div className="mt-0.5 text-[13px] leading-snug text-[var(--muted-strong)]">
+
+                    <div className="mt-0.5 text-[13px] leading-snug text-[var(--muted-strong)] line-clamp-2 overflow-hidden text-ellipsis">
                       {room.description}
                     </div>
                   </div>
 
                   {/* Chevron */}
-                  <div
-                    className="ml-2 text-[var(--muted)]"
-                    aria-hidden="true"
-                  >
+                  <div className="ml-2 text-[var(--muted)]" aria-hidden="true">
                     ›
                   </div>
                 </div>
@@ -114,8 +113,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA – in normal flow so it never covers a card */}
-        <section className="mt-6">
+        {/* CTA */}
+        <section className="mt-6 mb-2">
           <ShareThoughtButton />
         </section>
       </div>
