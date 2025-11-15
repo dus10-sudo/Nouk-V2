@@ -2,237 +2,280 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser';
 
-type RoomDef = {
+type Room = {
+  id: string;
   slug: string;
-  title: string;
-  subtitle: string;
+  name: string;
+  description: string | null;
 };
 
-const ROOMS: RoomDef[] = [
-  {
-    slug: 'library',
-    title: 'Library',
-    subtitle: 'Books, projects, ideas',
-  },
-  {
-    slug: 'kitchen',
-    title: 'Kitchen',
-    subtitle: 'Recipes, cooking, food talk',
-  },
-  {
-    slug: 'theater',
-    title: 'Theater',
-    subtitle: 'Movies & TV',
-  },
-  {
-    slug: 'game-room',
-    title: 'Game Room',
-    subtitle: 'Games, music & hobbies',
-  },
-  {
-    slug: 'garage',
-    title: 'Garage',
-    subtitle: 'DIY, tools, builds',
-  },
-  {
-    slug: 'study',
-    title: 'Study',
-    subtitle: 'Focus, learning, planning',
-  },
+const ROOM_SLUG_ORDER = [
+  'library',
+  'lounge',
+  'studio',
+  'theater',
+  'game-room',
+  'cafe',
 ];
 
-export default function ShareThought() {
+type FormState = {
+  roomSlug: string | null;
+  title: string;
+  link: string;
+  submitting: boolean;
+  error: string | null;
+};
+
+export default function ShareThoughtButton() {
   const router = useRouter();
-
-  const [mounted, setMounted] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [open, setOpen] = useState(false);
+  const [state, setState] = useState<FormState>({
+    roomSlug: null,
+    title: '',
+    link: '',
+    submitting: false,
+    error: null,
+  });
 
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [link, setLink] = useState('');
-  const [touched, setTouched] = useState(false);
-
-  // allow createPortal to attach to document.body
+  // Load rooms once on mount
   useEffect(() => {
-    setMounted(true);
+    let cancelled = false;
+
+    async function loadRooms() {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('id, slug, name, description');
+
+      if (error) {
+        console.error('[ShareThought] Error loading rooms', error);
+        return;
+      }
+
+      if (!data || cancelled) return;
+
+      const ordered = [...data].sort((a, b) => {
+        const ia = ROOM_SLUG_ORDER.indexOf(a.slug);
+        const ib = ROOM_SLUG_ORDER.indexOf(b.slug);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      });
+
+      setRooms(ordered);
+      setState((prev) => ({
+        ...prev,
+        roomSlug: ordered[0]?.slug ?? null,
+      }));
+    }
+
+    loadRooms();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // close on ESC
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  const selectedRoom =
+    rooms.find((r) => r.slug === state.roomSlug) ?? null;
 
-  const resetState = () => {
-    setSelectedSlug(null);
-    setTitle('');
-    setLink('');
-    setTouched(false);
-  };
+  async function handleSubmit() {
+    if (!selectedRoom) {
+      setState((prev) => ({
+        ...prev,
+        error: 'Pick a room first.',
+      }));
+      return;
+    }
 
-  const handleOpen = () => {
-    resetState();
-    setOpen(true);
-  };
+    const trimmedTitle = state.title.trim();
+    const trimmedLink = state.link.trim();
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+    if (!trimmedTitle && !trimmedLink) {
+      setState((prev) => ({
+        ...prev,
+        error: 'Say at least a few words, or paste a link.',
+      }));
+      return;
+    }
 
-  const canStart =
-    !!selectedSlug && (title.trim().length > 0 || link.trim().length > 0);
+    setState((prev) => ({ ...prev, submitting: true, error: null }));
 
-  const handleStart = () => {
-    if (!selectedSlug || !canStart) return;
+    try {
+      const { data, error } = await supabase
+        .from('threads')
+        .insert({
+          room_id: selectedRoom.id,
+          title: trimmedTitle || 'Untitled Nouk',
+          url: trimmedLink || null, // matches your SQL schema
+        })
+        .select('id')
+        .single();
 
-    const params = new URLSearchParams();
-    if (title.trim()) params.set('title', title.trim());
-    if (link.trim()) params.set('link', link.trim());
+      if (error) {
+        console.error('[ShareThought] Error creating thread', error);
+        setState((prev) => ({
+          ...prev,
+          submitting: false,
+          error: 'Something went wrong. Please try again.',
+        }));
+        return;
+      }
 
-    const qs = params.toString();
-    router.push(`/room/${selectedSlug}${qs ? `?${qs}` : ''}`);
-    setOpen(false);
-  };
+      if (!data?.id) {
+        setState((prev) => ({
+          ...prev,
+          submitting: false,
+          error: 'Could not start the Nouk. Please try again.',
+        }));
+        return;
+      }
 
-  // bottom docked CTA (always visible)
-  const triggerBar = (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom,16px)]">
-      <button
-        type="button"
-        onClick={handleOpen}
-        className="pointer-events-auto w-full max-w-[720px] rounded-2xl bg-[var(--accent)] px-6 py-4 text-[17px] font-medium text-[var(--accent-foreground)] shadow-[0_10px_30px_rgba(0,0,0,0.22)] active:translate-y-[1px] transition-transform"
-      >
-        Share a Thought
-      </button>
-    </div>
-  );
+      // Close modal and go to the new thread
+      setOpen(false);
+      setState({
+        roomSlug: selectedRoom.slug,
+        title: '',
+        link: '',
+        submitting: false,
+        error: null,
+      });
 
-  // modal sheet rendered via portal so it never pushes layout
-  const modal =
-    mounted && open
-      ? createPortal(
-          <div
-            className="fixed inset-0 z-[60] grid place-items-center bg-[rgba(0,0,0,0.6)] backdrop-blur-[2px] p-4"
-            onClick={handleClose}
-            aria-modal="true"
-            role="dialog"
-          >
-            <div
-              className="w-full max-w-[560px] rounded-3xl border border-[var(--ring)] bg-[var(--card)] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.45)] animate-modalIn"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="mb-2 text-[22px] font-serif text-ink">
-                Start a New Nouk
-              </h2>
-              <p className="mb-4 text-[14px] text-[var(--muted)]">
-                Find your cozy corner. Pick a room, jot something small, and
-                let it drift.
-              </p>
-
-              {/* step 1 — room selection */}
-              <div className="mb-4">
-                <p className="mb-2 text-[13px] font-medium text-[var(--muted)]">
-                  1) Where do you want to post?
-                </p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {ROOMS.map((room) => {
-                    const selected = room.slug === selectedSlug;
-                    return (
-                      <button
-                        key={room.slug}
-                        type="button"
-                        onClick={() => setSelectedSlug(room.slug)}
-                        className={[
-                          'rounded-xl border px-3 py-2 text-left transition-colors',
-                          selected
-                            ? 'border-[var(--accent)] bg-[var(--paper)]'
-                            : 'border-[var(--ring)] bg-[var(--card)]',
-                        ].join(' ')}
-                      >
-                        <div className="text-[13px] font-medium text-ink">
-                          {room.title}
-                        </div>
-                        <div className="text-[11px] text-[var(--muted)]">
-                          {room.subtitle}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* step 2 — title + optional link */}
-              <div className="mb-4">
-                <p className="mb-2 text-[13px] font-medium text-[var(--muted)]">
-                  2) What’s the thread about?
-                </p>
-
-                <div className="mb-2 rounded-2xl border border-[var(--ring)] bg-white/80 px-3 py-2">
-                  <textarea
-                    value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      setTouched(true);
-                    }}
-                    rows={3}
-                    placeholder="Say something small to start…"
-                    className="w-full resize-none border-none bg-transparent text-[14px] text-ink outline-none placeholder:text-[var(--muted)]"
-                  />
-                </div>
-
-                <input
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="Optional link (YouTube, Spotify, article…)"
-                  className="w-full rounded-2xl border border-[var(--ring)] bg-white/80 px-3 py-2 text-[14px] text-ink outline-none placeholder:text-[var(--muted)]"
-                />
-
-                <div className="mt-1 text-[11px] text-[var(--muted)]">
-                  Keep it short and gentle. You can always add more in the
-                  replies.
-                </div>
-              </div>
-
-              {/* footer actions */}
-              <div className="mt-4 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="rounded-2xl border border-[var(--ring)] bg-[var(--paper)] px-4 py-2 text-[14px] text-ink"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStart}
-                  disabled={!canStart}
-                  className={[
-                    'rounded-2xl px-4 py-2 text-[14px] font-semibold shadow-[0_6px_18px_rgba(0,0,0,0.25)]',
-                    canStart
-                      ? 'bg-[var(--accent)] text-[var(--accent-foreground)] active:translate-y-[1px] active:shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
-                      : 'bg-[var(--accent-soft)] text-[var(--muted)] opacity-70 cursor-not-allowed',
-                  ].join(' ')}
-                >
-                  Start Nouk
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
+      router.push(`/t/${data.id}`);
+    } catch (err) {
+      console.error('[ShareThought] Unexpected error', err);
+      setState((prev) => ({
+        ...prev,
+        submitting: false,
+        error: 'Something went wrong. Please try again.',
+      }));
+    }
+  }
 
   return (
     <>
-      {triggerBar}
-      {modal}
+      {/* Docked main button */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-4 text-[15px] font-semibold tracking-wide text-[var(--paper)] shadow-[0_18px_55px_rgba(15,23,42,0.55)] active:scale-[0.98] transition-transform"
+      >
+        Share a Thought
+      </button>
+
+      {/* Simple overlay modal */}
+      {open && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-md rounded-t-[28px] bg-[var(--paper)] px-5 pb-5 pt-4 shadow-[0_-18px_55px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted)]">
+                  START A NOUK
+                </div>
+                <div className="text-[15px] text-[var(--ink)]">
+                  Find a quiet corner for this.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full px-3 py-1 text-[13px] text-[var(--muted)] hover:bg-black/5"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Room selector */}
+            <div className="mb-3">
+              <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
+                1) Where do you want to post?
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {rooms.map((room) => {
+                  const isSelected = room.slug === state.roomSlug;
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() =>
+                        setState((prev) => ({
+                          ...prev,
+                          roomSlug: room.slug,
+                          error:
+                            prev.error === 'Pick a room first.'
+                              ? null
+                              : prev.error,
+                        }))
+                      }
+                      className={`flex items-center justify-center rounded-[18px] border px-3 py-2 text-[14px] ${
+                        isSelected
+                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
+                          : 'border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] text-[var(--ink)]'
+                      }`}
+                    >
+                      {room.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Title + link inputs */}
+            <div className="mb-3">
+              <div className="mb-1 text-[13px] font-medium text-[var(--muted-strong)]">
+                2) What&apos;s the thread about?
+              </div>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Say something small to start…"
+                  value={state.title}
+                  onChange={(e) =>
+                    setState((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                />
+                <input
+                  type="url"
+                  placeholder="Optional link (YouTube, Spotify, article…)"
+                  value={state.link}
+                  onChange={(e) =>
+                    setState((prev) => ({ ...prev, link: e.target.value }))
+                  }
+                  className="w-full rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                />
+              </div>
+            </div>
+
+            {/* Error */}
+            {state.error && (
+              <div className="mb-2 text-[13px] text-[var(--danger)]">
+                {state.error}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="flex-1 rounded-[18px] border border-[color-mix(in_srgb,var(--muted)_35%,transparent)] bg-transparent px-3 py-2 text-[14px] text-[var(--muted-strong)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={state.submitting}
+                className="flex-1 rounded-[18px] bg-[var(--accent)] px-3 py-2 text-[14px] font-semibold text-[var(--paper)] shadow-[0_12px_30px_rgba(15,23,42,0.55)] disabled:opacity-60"
+              >
+                {state.submitting ? 'Starting…' : 'Start Nouk'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
