@@ -252,3 +252,7 @@ export default function HomeInsidePage() {
     </main>
   );
 }
+/* Hide bottom nav on the hearth page */
+body.hiding-nav .bottom-nav {
+  display: none !important;
+}
