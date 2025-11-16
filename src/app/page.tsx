@@ -50,17 +50,12 @@ const ROOMS: Room[] = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
-      <div className="mx-auto flex w-full max-w-md flex-col px-4 pt-10 pb-28">
-        {/* Top label */}
-        <div className="mb-6 text-[12px] font-semibold tracking-[0.28em] text-[var(--muted-strong)]">
-          NOUK
-        </div>
-
-        {/* Tagline */}
-        <p className="mb-6 text-[15px] leading-relaxed text-[var(--ink-soft)]">
-          A quiet little house for short-lived threads. Share something small,
-          let it breathe, and let it fade.
+    <main className="min-h-screen bg-gradient-to-b from-[#F6E5C8] via-[#F2D9B5] to-[#E7C39A] text-[rgba(89,60,35,0.9)]">
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 pt-12 pb-28">
+        {/* Tagline only – no "Nouk" text header here */}
+        <p className="mb-8 text-[15px] leading-relaxed text-[rgba(89,60,35,0.85)]">
+          A quiet little house for short-lived threads. Share something
+          small, let it breathe, and let it fade.
         </p>
 
         {/* Room cards */}
@@ -69,26 +64,26 @@ export default function HomePage() {
             <Link
               key={room.slug}
               href={`/r/${room.slug}`}
-              className="group block rounded-[28px] bg-gradient-to-br from-[#fef8ec] to-[#f3e3c7] px-4 py-3 shadow-[0_20px_45px_rgba(15,23,42,0.35)] transition-transform duration-150 ease-out hover:-translate-y-[1px] active:translate-y-[1px]"
+              className="group block rounded-[28px] bg-gradient-to-br from-[#FFF8EC] to-[#F4E0C3] px-4 py-3 shadow-[0_20px_45px_rgba(15,23,42,0.35)] transition-transform duration-150 ease-out hover:-translate-y-[1px] active:translate-y-[1px]"
             >
               <div className="flex items-center gap-3">
                 {/* Emoji chip */}
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff7ec] shadow-[0_10px_25px_rgba(15,23,42,0.25)] text-[22px]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF7EC] shadow-[0_10px_25px_rgba(15,23,42,0.25)] text-[22px]">
                   {room.emoji}
                 </div>
 
                 {/* Text */}
                 <div className="flex-1">
-                  <div className="text-[15px] font-semibold text-[var(--ink)]">
+                  <div className="text-[15px] font-semibold">
                     {room.name}
                   </div>
-                  <div className="mt-0.5 text-[13px] leading-snug text-[var(--ink-soft)]">
+                  <div className="mt-0.5 text-[13px] leading-snug text-[rgba(89,60,35,0.8)]">
                     {room.description}
                   </div>
                 </div>
 
                 {/* Chevron */}
-                <div className="text-[var(--muted-strong)]">›</div>
+                <div className="text-[rgba(89,60,35,0.6)]">›</div>
               </div>
             </Link>
           ))}
