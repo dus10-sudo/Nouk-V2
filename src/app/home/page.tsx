@@ -40,19 +40,18 @@ export default function HomePage() {
       {/* Background image */}
       <div className="fixed inset-0 -z-10">
         <Image
-          src="/house-inside.jpg" // make sure this is in /public
+          src="/house-interior.jpg" // <--- make sure this matches the file in /public
           alt="A cozy room with a fireplace, bookshelves, and armchairs."
           fill
           priority
           className="object-cover"
         />
-        {/* MUCH lighter overlay so the image shows through */}
+        {/* lighter overlay so the art is visible */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex min-h-screen flex-col">
-        {/* Main content area */}
         <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 pb-32 pt-20">
           <div className="space-y-2">
             <div className="text-xs tracking-[0.3em] text-amber-200/80">
