@@ -63,9 +63,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    // Parchment background locked in here
+    // Parchment background
     <main className="min-h-screen bg-[#f4e4cc] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pt-10 pb-32">
+      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pt-10 pb-28">
         {/* Top header wordmark */}
         <header className="mb-4">
           <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)]">
