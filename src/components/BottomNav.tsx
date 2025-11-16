@@ -1,64 +1,54 @@
 // src/components/BottomNav.tsx
 'use client';
 
-import { useRouter } from 'next/navigation';
-import ShareThoughtButton from '@/components/ShareThought';
+import { usePathname, useRouter } from 'next/navigation';
+import ShareThoughtButton from './ShareThought';
 
 export default function BottomNav() {
+  const pathname = usePathname();
   const router = useRouter();
 
-  const handleHomeClick = () => {
-    router.push('/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const isHome = pathname === '/' || pathname === '';
 
-  const handleSproutClick = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleHome = () => {
+    if (isHome) {
+      // Scroll to top if we're already on home
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      router.push('/');
+    }
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-4">
-      <div
-        className="
-          pointer-events-auto
-          flex w-full max-w-xl items-center gap-3
-          rounded-full
-          px-4 py-2.5
-          bg-transparent
-          backdrop-blur-md
-          shadow-[0_18px_45px_rgba(15,23,42,0.55)]
-        "
-      >
-        {/* Left: Nouk label */}
+    <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center">
+      {/* Transparent bar – only inner row has content */}
+      <div className="pointer-events-auto flex w-full max-w-xl items-center justify-between px-4">
+        {/* Left: Nouk wordmark */}
         <button
           type="button"
-          onClick={handleHomeClick}
-          className="shrink-0 text-[13px] font-semibold tracking-[0.18em] text-[var(--ink)]"
+          onClick={handleHome}
+          className="rounded-full bg-[rgba(0,0,0,0.05)] px-4 py-1.5 text-[13px] font-semibold tracking-[0.16em] text-[var(--ink-soft)] uppercase"
         >
           Nouk
         </button>
 
-        {/* Center: Share a Thought (existing button & sheet) */}
-        <div className="flex-1 flex justify-center">
-          <div className="w-full max-w-xs">
-            <ShareThoughtButton />
-          </div>
+        {/* Center: Share a Thought (reuses existing component) */}
+        <div className="flex-1 px-3">
+          <ShareThoughtButton />
         </div>
 
-        {/* Right: Sprout circle (scroll to top / future home icon) */}
+        {/* Right: sprout icon home/top button */}
         <button
           type="button"
-          onClick={handleSproutClick}
-          className="
-            shrink-0
-            flex h-10 w-10 items-center justify-center
-            rounded-full
-            bg-[var(--paper)]
-            shadow-[0_10px_25px_rgba(15,23,42,0.45)]
-          "
-          aria-label="Back to top"
+          onClick={handleHome}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f7f1e5] shadow-[0_10px_30px_rgba(15,23,42,0.28)]"
         >
-          <span className="text-[20px] leading-none">🌱</span>
+          <span className="text-[20px]" aria-hidden="true">
+            🌱
+          </span>
+          <span className="sr-only">
+            {isHome ? 'Scroll to top' : 'Go to home'}
+          </span>
         </button>
       </div>
     </div>
