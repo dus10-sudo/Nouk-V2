@@ -1,98 +1,95 @@
-'use client';
+// src/app/home/page.tsx
+import Image from "next/image";
+import Link from "next/link";
 
-import Link from 'next/link';
-
-type Room = {
-  slug: string;
-  name: string;
-  description: string;
-};
-
-const ROOMS: Room[] = [
+const rooms = [
   {
-    slug: 'sunroom',
-    name: 'Sunroom',
-    description: 'For light check-ins, small wins, and passing thoughts.',
+    slug: "sunroom",
+    title: "Sunroom",
+    description: "For light check-ins, small wins, and passing thoughts.",
   },
   {
-    slug: 'living-room',
-    name: 'Living Room',
-    description: 'For relaxed conversation, shared moments, and company.',
+    slug: "living-room",
+    title: "Living Room",
+    description:
+      "For relaxed conversation, shared moments, and company.",
   },
   {
-    slug: 'garden',
-    name: 'Garden',
-    description: 'For intentions, tiny steps, and gentle personal growth.',
+    slug: "garden",
+    title: "Garden",
+    description:
+      "For intentions, tiny steps, and gentle personal growth.",
   },
   {
-    slug: 'lantern-room',
-    name: 'Lantern Room',
-    description: 'For heavy feelings, venting, and emotional processing.',
+    slug: "lantern-room",
+    title: "Lantern Room",
+    description:
+      "For heavy feelings, venting, and emotional processing.",
   },
   {
-    slug: 'observatory',
-    name: 'Observatory',
-    description: 'For late-night thoughts, big questions, and wonder.',
-  },
-  {
-    slug: 'library',
-    name: 'Library',
-    description: 'For thoughtful writing and quiet reflection.',
+    slug: "observatory",
+    title: "Observatory",
+    description:
+      "For late-night thoughts, big questions, and wonder.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden text-amber-50">
+    <main className="relative min-h-screen text-[#fdf3e3]">
       {/* Background image */}
-      <div className="absolute inset-0 -z-10">
-        <div
-          className="h-full w-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/house-interior.jpg')" }}
+      <div className="fixed inset-0 -z-10">
+        <Image
+          src="/house-inside.jpg" // make sure this is in /public
+          alt="A cozy room with a fireplace, bookshelves, and armchairs."
+          fill
+          priority
+          className="object-cover"
         />
-        {/* Soft dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/70 to-black/85" />
+        {/* MUCH lighter overlay so the image shows through */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-2xl flex-col px-4 pb-28 pt-16">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="text-xs tracking-[0.3em] text-amber-200/80">
-            N O U K
+      <div className="relative z-10 flex min-h-screen flex-col">
+        {/* Main content area */}
+        <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 pb-32 pt-20">
+          <div className="space-y-2">
+            <div className="text-xs tracking-[0.3em] text-amber-200/80">
+              N O U K
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-[#fdf3e3]">
+              Choose your space
+            </h1>
+            <p className="text-sm leading-relaxed text-[#fbe9cf]">
+              A quiet little house for short-lived threads. Share something
+              small, let it breathe, and let it fade.
+            </p>
           </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-amber-50">
-            Choose your space
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-amber-100/90">
-            A quiet little house for short-lived threads. Share something small,
-            let it breathe, and let it fade.
-          </p>
-        </header>
 
-        {/* Rooms */}
-        <div className="space-y-4">
-          {ROOMS.map((room) => (
-            <Link
-              key={room.slug}
-              href={`/room/${room.slug}`}
-              className="group block rounded-3xl bg-amber-50/95 px-5 py-4 shadow-[0_14px_35px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:bg-amber-50"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold text-[#3b2614]">
-                    {room.name}
-                  </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-[#62452a]">
-                    {room.description}
-                  </p>
+          <div className="space-y-4">
+            {rooms.map((room) => (
+              <Link
+                key={room.slug}
+                href={`/room/${room.slug}`}
+                className="block rounded-3xl bg-[#f9eedf]/92 px-5 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-sm transition-transform hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-base font-semibold text-[#4b2f21]">
+                      {room.title}
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-[#6a4a35]">
+                      {room.description}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-lg text-[#c28b4b]">
+                    &#8250;
+                  </span>
                 </div>
-                <span className="mt-1 text-lg text-[#c47a2c] group-hover:translate-x-0.5 transition-transform">
-                  ›
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </main>
