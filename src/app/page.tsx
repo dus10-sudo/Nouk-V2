@@ -1,36 +1,69 @@
+// src/app/page.tsx
+import Image from "next/image";
 import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen w-full overflow-hidden bg-black">
-      <div
-        className="relative h-screen w-full bg-cover bg-center"
-        style={{ backgroundImage: "url('/house-landing.jpg')" }}
-      >
-        {/* Soft dark overlay so the title + button pop but the art is still visible */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/40" />
+    <main className="relative h-screen overflow-hidden">
+      {/* Background illustration */}
+      <div className="absolute inset-0">
+        <Image
+          src="/house-landing.jpg"
+          alt="A lantern-lit forest path leading to a small cozy house under a full moon."
+          fill
+          priority
+          className="object-cover"
+        />
+      </div>
 
-        {/* Centered stack for title + button */}
-        <div className="relative z-10 flex h-full flex-col items-center justify-center">
-          <div className="flex flex-col items-center gap-8 -translate-y-6">
-            {/* Title above the bright part of the moon */}
-            <h1 className="text-5xl md:text-6xl font-serif text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
-              Nouk
-            </h1>
+      {/* Subtle gradient for readability */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/40" />
 
-            {/* Lantern-gold pill button */}
-            <Link
-              href="/home"
-              className="rounded-full px-10 py-3 text-lg font-medium
-                         bg-amber-200/90 text-[#4b300f]
-                         shadow-[0_18px_35px_rgba(0,0,0,0.55)]
-                         backdrop-blur-sm
-                         transition-colors duration-200
-                         hover:bg-amber-100/95 active:bg-amber-200"
+      {/* Foreground content */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-between px-6 pt-[9vh] pb-[10vh] sm:pt-[10vh] sm:pb-[11vh]">
+        {/* Title in the treetop clearing */}
+        <div className="flex w-full flex-col items-center">
+          <h1
+            className="
+              font-sans 
+              text-[2.75rem] 
+              sm:text-[3.25rem]
+              font-semibold 
+              tracking-[0.18em]
+              uppercase
+              text-white
+              drop-shadow-[0_6px_16px_rgba(0,0,0,0.75)]
+            "
+          >
+            Nouk
+          </h1>
+        </div>
+
+        {/* Button down on the path area */}
+        <div className="flex w-full flex-col items-center">
+          <Link href="/home" className="w-full flex justify-center">
+            <button
+              className="
+                rounded-full 
+                bg-[#F4D48A] 
+                px-10 
+                py-3.5 
+                text-lg 
+                sm:text-xl
+                font-medium 
+                text-[#5B3B1A]
+                shadow-[0_12px_28px_rgba(0,0,0,0.5)]
+                backdrop-blur-sm
+                transition
+                duration-200
+                hover:scale-[1.03]
+                hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)]
+                active:scale-[0.97]
+              "
             >
               Enter the House
-            </Link>
-          </div>
+            </button>
+          </Link>
         </div>
       </div>
     </main>
