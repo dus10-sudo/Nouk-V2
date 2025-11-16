@@ -1,38 +1,64 @@
 // src/components/BottomNav.tsx
-"use client";
+'use client';
 
-import Link from "next/link";
-import ShareThoughtButton from "@/components/ShareThought";
+import { useRouter } from 'next/navigation';
+import ShareThoughtButton from '@/components/ShareThought';
 
 export default function BottomNav() {
+  const router = useRouter();
+
+  const handleHomeClick = () => {
+    router.push('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSproutClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 sm:pb-5">
-      <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-full border border-black/5 bg-[var(--paper)]/95 px-3 py-2 shadow-[0_18px_55px_rgba(15,23,42,0.55)] backdrop-blur-md">
-        {/* Left: brand / home */}
-        <Link
-          href="/"
-          className="flex items-center text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)] uppercase transition-transform active:scale-95"
-        >
-          Nouk
-        </Link>
-
-        {/* Center: Share CTA – reusing existing button & modal */}
-        <div className="flex-1">
-          <ShareThoughtButton />
-        </div>
-
-        {/* Right: sprout logo – for now just scroll-to-top */}
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-4">
+      <div
+        className="
+          pointer-events-auto
+          flex w-full max-w-xl items-center gap-3
+          rounded-full
+          px-4 py-2.5
+          bg-transparent
+          backdrop-blur-md
+          shadow-[0_18px_45px_rgba(15,23,42,0.55)]
+        "
+      >
+        {/* Left: Nouk label */}
         <button
           type="button"
-          aria-label="Back to top"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface)] shadow-[0_10px_30px_rgba(15,23,42,0.4)] transition-transform active:scale-95"
+          onClick={handleHomeClick}
+          className="shrink-0 text-[13px] font-semibold tracking-[0.18em] text-[var(--ink)]"
         >
-          <span className="text-lg">🌱</span>
+          Nouk
+        </button>
+
+        {/* Center: Share a Thought (existing button & sheet) */}
+        <div className="flex-1 flex justify-center">
+          <div className="w-full max-w-xs">
+            <ShareThoughtButton />
+          </div>
+        </div>
+
+        {/* Right: Sprout circle (scroll to top / future home icon) */}
+        <button
+          type="button"
+          onClick={handleSproutClick}
+          className="
+            shrink-0
+            flex h-10 w-10 items-center justify-center
+            rounded-full
+            bg-[var(--paper)]
+            shadow-[0_10px_25px_rgba(15,23,42,0.45)]
+          "
+          aria-label="Back to top"
+        >
+          <span className="text-[20px] leading-none">🌱</span>
         </button>
       </div>
     </div>
