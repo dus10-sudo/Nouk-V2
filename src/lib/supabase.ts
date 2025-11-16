@@ -1,48 +1,32 @@
 // src/lib/supabase.ts
-import { cookies } from "next/headers";
-import { createServerClient, createBrowserClient, type CookieOptions } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
-// Use your environment variables
+/* --------------------------------------------------------
+   ENV VALUES
+--------------------------------------------------------- */
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /* --------------------------------------------------------
-   1) BROWSER CLIENT (for client components)
+   1) SIMPLE BROWSER CLIENT
 --------------------------------------------------------- */
-export function createBrowserSupabase() {
-  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* --------------------------------------------------------
-   2) SERVER CLIENT (for API routes & server components)
+   2) SERVER CLIENT (used in API routes)
 --------------------------------------------------------- */
 export function createServerSupabase() {
-  const cookieStore = cookies();
-
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value, ...options });
-        } catch {
-          /* ignore */
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: "", ...options });
-        } catch {
-          /* ignore */
-        }
-      }
-    }
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
   });
 }
 
 /* --------------------------------------------------------
-   3) SIMPLE SHARED FALLBACK CLIENT (non-auth use)
+   3) Function names compatible with older file imports
 --------------------------------------------------------- */
-export const supabase = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export function createBrowserSupabase() {
+  return supabase;
+}
