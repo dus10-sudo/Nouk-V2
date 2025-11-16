@@ -1,92 +1,100 @@
 // src/app/page.tsx
 import Link from 'next/link';
+import ShareThoughtButton from '@/components/ShareThought';
 
-type Room = {
+type RoomCard = {
   slug: string;
   name: string;
   description: string;
-  emoji: string;
+  icon: string;
 };
 
-const ROOMS: Room[] = [
+const ROOMS: RoomCard[] = [
   {
     slug: 'sunroom',
     name: 'Sunroom',
     description: 'For light check ins, small wins, and passing thoughts.',
-    emoji: '🌞',
+    icon: '🌞',
   },
   {
     slug: 'living-room',
     name: 'Living Room',
     description: 'For relaxed conversation, shared moments, and company.',
-    emoji: '🛋️',
+    icon: '🛋️',
   },
   {
     slug: 'garden',
     name: 'Garden',
     description: 'For intentions, tiny steps, and gentle personal growth.',
-    emoji: '🌱',
+    icon: '🌱',
   },
   {
     slug: 'lantern-room',
     name: 'Lantern Room',
     description: 'For heavy feelings, venting, and emotional processing.',
-    emoji: '🔮',
+    icon: '🔮',
   },
   {
     slug: 'observatory',
     name: 'Observatory',
     description: 'For late night thoughts, big questions, and wonder.',
-    emoji: '🌙',
+    icon: '🌙',
   },
   {
     slug: 'library',
     name: 'Library',
     description:
       'For journaling, prompts, and more thoughtful writing.',
-    emoji: '📖',
+    icon: '📖',
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#F6E5C8] via-[#F2D9B5] to-[#E7C39A] text-[rgba(89,60,35,0.9)]">
-      <div className="mx-auto flex w-full max-w-md flex-col px-4 pt-12 pb-28">
-        {/* Tagline only – no "Nouk" text header here */}
-        <p className="mb-8 text-[15px] leading-relaxed text-[rgba(89,60,35,0.85)]">
-          A quiet little house for short-lived threads. Share something
-          small, let it breathe, and let it fade.
-        </p>
+    <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-6 pt-8">
+        {/* Tiny header */}
+        <header className="mb-4">
+          <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)]">
+            NOUK
+          </div>
+          <p className="mt-4 text-[15px] leading-relaxed text-[var(--ink-soft)]">
+            A quiet little house for short-lived threads. Share something
+            small, let it breathe, and let it fade.
+          </p>
+        </header>
 
-        {/* Room cards */}
-        <div className="space-y-3">
+        {/* Rooms list */}
+        <div className="flex-1 space-y-3">
           {ROOMS.map((room) => (
             <Link
               key={room.slug}
               href={`/r/${room.slug}`}
-              className="group block rounded-[28px] bg-gradient-to-br from-[#FFF8EC] to-[#F4E0C3] px-4 py-3 shadow-[0_20px_45px_rgba(15,23,42,0.35)] transition-transform duration-150 ease-out hover:-translate-y-[1px] active:translate-y-[1px]"
+              className="block rounded-[26px] bg-[var(--card)] px-4 py-3 shadow-[0_18px_55px_rgba(15,23,42,0.28)]"
             >
               <div className="flex items-center gap-3">
-                {/* Emoji chip */}
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF7EC] shadow-[0_10px_25px_rgba(15,23,42,0.25)] text-[22px]">
-                  {room.emoji}
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--paper)] text-[20px] shadow-[0_10px_30px_rgba(15,23,42,0.35)]">
+                  <span>{room.icon}</span>
                 </div>
-
-                {/* Text */}
                 <div className="flex-1">
-                  <div className="text-[15px] font-semibold">
+                  <div className="text-[15px] font-semibold text-[var(--ink)]">
                     {room.name}
                   </div>
-                  <div className="mt-0.5 text-[13px] leading-snug text-[rgba(89,60,35,0.8)]">
+                  <div className="mt-0.5 text-[13px] leading-snug text-[var(--ink-soft)]">
                     {room.description}
                   </div>
                 </div>
-
-                {/* Chevron */}
-                <div className="text-[rgba(89,60,35,0.6)]">›</div>
+                <div className="text-[var(--muted)] text-[18px]">
+                  &#8250;
+                </div>
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* Share button at bottom of page (non-sticky) */}
+        <div className="mt-4">
+          <ShareThoughtButton />
         </div>
       </div>
     </main>
