@@ -1,15 +1,13 @@
-// src/app/page.tsx
 import Link from 'next/link';
-import ShareThoughtButton from '@/components/ShareThought';
 
-type RoomCard = {
+type Room = {
   slug: string;
   name: string;
   description: string;
   icon: string;
 };
 
-const ROOMS: RoomCard[] = [
+const ROOMS: Room[] = [
   {
     slug: 'sunroom',
     name: 'Sunroom',
@@ -51,51 +49,47 @@ const ROOMS: RoomCard[] = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pb-6 pt-8">
-        {/* Tiny header */}
-        <header className="mb-4">
-          <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)]">
-            NOUK
-          </div>
-          <p className="mt-4 text-[15px] leading-relaxed text-[var(--ink-soft)]">
+    <main
+      className="min-h-screen text-[#5a3b25]"
+      style={{
+        background:
+          'radial-gradient(circle at top, #f7ebd5 0, #f1d8b7 45%, #e0bc94 100%)',
+      }}
+    >
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-28 pt-10">
+        {/* Tagline only – no extra Nouk at top */}
+        <section className="mb-6 text-center">
+          <p className="text-sm leading-relaxed text-[#6c4a2d]">
             A quiet little house for short-lived threads. Share something
             small, let it breathe, and let it fade.
           </p>
-        </header>
+        </section>
 
-        {/* Rooms list */}
-        <div className="flex-1 space-y-3">
+        {/* Rooms */}
+        <section className="flex flex-1 flex-col gap-3 pb-4">
           {ROOMS.map((room) => (
             <Link
               key={room.slug}
-              href={`/r/${room.slug}`}
-              className="block rounded-[26px] bg-[var(--card)] px-4 py-3 shadow-[0_18px_55px_rgba(15,23,42,0.28)]"
+              href={`/room/${room.slug}`}
+              className="block rounded-[28px] bg-[#fbead5] px-4 py-4 shadow-[0_12px_30px_rgba(0,0,0,0.16)] transition-transform active:translate-y-[1px]"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--paper)] text-[20px] shadow-[0_10px_30px_rgba(15,23,42,0.35)]">
-                  <span>{room.icon}</span>
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fdf4e7] text-xl shadow-[0_8px_16px_rgba(0,0,0,0.14)]">
+                  {room.icon}
                 </div>
                 <div className="flex-1">
-                  <div className="text-[15px] font-semibold text-[var(--ink)]">
+                  <h2 className="text-base font-semibold text-[#5a3b25]">
                     {room.name}
-                  </div>
-                  <div className="mt-0.5 text-[13px] leading-snug text-[var(--ink-soft)]">
+                  </h2>
+                  <p className="mt-1 text-sm leading-snug text-[#7b5a3a]">
                     {room.description}
-                  </div>
+                  </p>
                 </div>
-                <div className="text-[var(--muted)] text-[18px]">
-                  &#8250;
-                </div>
+                <span className="text-lg text-[#c3996b]">›</span>
               </div>
             </Link>
           ))}
-        </div>
-
-        {/* Share button at bottom of page (non-sticky) */}
-        <div className="mt-4">
-          <ShareThoughtButton />
-        </div>
+        </section>
       </div>
     </main>
   );
