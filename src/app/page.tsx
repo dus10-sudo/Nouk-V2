@@ -61,26 +61,21 @@ export default function LandingPage() {
         }`}
       />
 
-      {/* Title + button */}
-      <div className="relative z-10 h-full w-full">
-        {/* NOUK title */}
-        <div
-          className={`absolute top-[10vh] flex w-full justify-center transition-opacity duration-400 ${
-            isPlayingTransition ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
+      {/* Title + button overlay */}
+      <div
+        className={`relative z-10 flex h-full w-full flex-col items-center justify-between py-[10vh] transition-opacity duration-400 ${
+          isPlayingTransition ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        {/* Top spacer area + title */}
+        <div className="flex w-full flex-col items-center">
           <h1 className="fade-in-title text-5xl tracking-[0.35em] text-white sm:text-6xl">
             NOUK
           </h1>
         </div>
 
-        {/* Enter button */}
-        <div
-          className={`absolute inset-x-0 flex w-full justify-center transition-opacity duration-400 ${
-            isPlayingTransition ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-          style={{ bottom: '16vh' }} // a bit higher so it’s clearly visible
-        >
+        {/* Bottom area + button */}
+        <div className="flex w-full justify-center">
           <button
             type="button"
             onClick={handleEnter}
