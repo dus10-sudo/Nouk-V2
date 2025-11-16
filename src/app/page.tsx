@@ -1,103 +1,35 @@
-"use client";
+// src/app/page.tsx
 
+import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    // Trigger fade-in once mounted
-    setIsReady(true);
-  }, []);
-
-  const handleEnter = () => {
-    const video = videoRef.current;
-
-    if (video) {
-      setIsPlaying(true);
-      video.currentTime = 0;
-
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // If autoplay is blocked, just go straight in
-          router.push("/home");
-        });
-      }
-    } else {
-      router.push("/home");
-    }
-  };
-
-  const handleVideoEnd = () => {
-    router.push("/home");
-  };
-
   return (
-    <main className="relative h-[100dvh] w-full overflow-hidden bg-black">
-      {/* Background illustration */}
+    <main className="relative min-h-screen w-full overflow-hidden">
+
       <Image
-        src="/house-landing.jpg"
-        alt="A cozy cottage glowing under a full moon in the woods"
+        src="/house.jpg"
+        alt="Nouk House"
         fill
         priority
-        className="object-cover"
+        className="object-cover z-0"
       />
 
-      {/* Gradient to keep text readable */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/70" />
+      <div className="absolute inset-0 bg-black/40 z-10" />
 
-      {/* Entry animation video */}
-      <video
-        ref={videoRef}
-        src="/enter-house.mp4"
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-          isPlaying ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onEnded={handleVideoEnd}
-        playsInline
-        muted
-      />
+      <div className="relative z-20 flex flex-col items-center justify-center h-full text-white px-6">
 
-      {/* Content */}
-      <div className="relative z-10 flex h-full flex-col items-center">
-        {/* Title */}
-        <div
-          className={`mt-16 text-center text-4xl tracking-[0.4em] text-white sm:mt-20 sm:text-5xl transition-all duration-700 ease-out ${
-            isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-          }`}
-        >
-          N O U K
-        </div>
+        <h1 className="text-6xl font-semibold tracking-[0.3em] mb-10 opacity-0 animate-fadeIn [--delay:200ms]">
+          NOUK
+        </h1>
 
-        {/* Spacer to keep the house visible and push button down */}
-        <div className="flex-1" />
-
-        {/* Enter button */}
-        <button
-          type="button"
-          onClick={handleEnter}
-          disabled={isPlaying}
-          className={`mb-20 rounded-full px-9 py-4 text-base font-medium outline-none shadow-lg shadow-amber-400/40
-          bg-amber-300/95 text-stone-900
-          transition-all duration-500 ease-out
-          hover:bg-amber-200 hover:shadow-amber-200/70 active:scale-95
-          sm:mb-24 sm:px-12 sm:py-4 sm:text-lg
-          ${
-            isPlaying
-              ? "scale-95 opacity-0 pointer-events-none"
-              : "opacity-100"
-          }
-          ${isReady ? "translate-y-0" : "translate-y-6"}
-          animate-pulse`}
+        <Link
+          href="/home"
+          className="px-10 py-4 bg-amber-300 text-black font-semibold rounded-full shadow-xl opacity-0 animate-fadeIn [--delay:500ms]"
         >
           Enter the House
-        </button>
+        </Link>
+
       </div>
     </main>
   );
