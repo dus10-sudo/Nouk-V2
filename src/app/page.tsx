@@ -63,10 +63,11 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pt-10 pb-28">
+    // Parchment background locked in here
+    <main className="min-h-screen bg-[#f4e4cc] text-[var(--ink)]">
+      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pt-10 pb-32">
         {/* Top header wordmark */}
-        <header className="mb-6">
+        <header className="mb-4">
           <div className="text-[13px] font-semibold tracking-[0.18em] text-[var(--muted-strong)]">
             NOUK
           </div>
@@ -92,7 +93,7 @@ export default function HomePage() {
                 className="
                   block
                   rounded-[26px]
-                  bg-[var(--card)]
+                  bg-[#fff6e6]
                   px-4 py-3.5
                   shadow-[0_18px_55px_rgba(15,23,42,0.28)]
                   transition-transform
@@ -104,7 +105,7 @@ export default function HomePage() {
                     className="
                       flex h-11 w-11 shrink-0 items-center justify-center
                       rounded-full
-                      bg-[var(--surface)]
+                      bg-white
                       shadow-[0_10px_30px_rgba(15,23,42,0.28)]
                     "
                   >
