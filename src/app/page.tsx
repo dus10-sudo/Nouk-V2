@@ -67,8 +67,14 @@ function ShareSheet({ open, onClose }: ShareSheetProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-t-3xl bg-[#f9e6c8] px-5 pb-6 pt-4 shadow-[0_-18px_40px_rgba(0,0,0,0.35)]">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="mb-[max(0.5rem,env(safe-area-inset-bottom))] w-full max-w-md rounded-t-3xl bg-[#f9e6c8] px-5 pb-5 pt-4 shadow-[0_-18px_40px_rgba(0,0,0,0.35)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#d8b896]" />
 
         <h2 className="text-center text-lg font-semibold text-[#5b3b25]">
@@ -98,7 +104,7 @@ function ShareSheet({ open, onClose }: ShareSheetProps) {
           </button>
           <button
             type="button"
-            // placeholder for real submit later
+            // temporary until posting is wired up
             onClick={onClose}
             className="flex-1 rounded-full bg-[#e58439] py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
           >
@@ -113,8 +119,7 @@ function ShareSheet({ open, onClose }: ShareSheetProps) {
 export default function HomePage() {
   const [shareOpen, setShareOpen] = useState(false);
 
-  // Listen for the fallback custom event from BottomNav (in case the nav
-  // gets used somewhere without an explicit onShareClick prop later).
+  // Listen for fallback custom event from BottomNav
   useEffect(() => {
     const handler = () => setShareOpen(true);
 
@@ -138,13 +143,11 @@ export default function HomePage() {
       }}
     >
       <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-4 pb-28 pt-10 text-[#5b3b25]">
-        {/* Tagline only – no extra Nouk heading at top */}
         <p className="text-center text-base leading-relaxed">
           A quiet little house for short-lived threads. Share something small,
           let it breathe, and let it fade.
         </p>
 
-        {/* Rooms list */}
         <div className="mt-7 space-y-4">
           {rooms.map((room) => (
             <Link
