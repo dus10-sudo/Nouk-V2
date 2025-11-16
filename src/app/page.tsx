@@ -1,48 +1,47 @@
+// src/app/page.tsx
+'use client';
+
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter();
+
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative h-[100dvh] w-full overflow-hidden bg-black">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
           src="/house-landing.jpg"
-          alt="A cozy little house in the woods lit by lanterns under a full moon"
+          alt="Nouk House"
           fill
           priority
-          sizes="100vw"
-          className="object-cover"
+          className="object-cover brightness-105"
         />
-        {/* Darken / vignette overlay for readable text */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,0,0,0.45),_transparent_55%),linear-gradient(to_bottom,rgba(0,0,0,0.4),rgba(0,0,0,0.7))]" />
+
+        {/* Soft overlay to improve text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col justify-between px-6 pb-10 pt-20 text-center text-white">
-        {/* Top spacer (so title isn’t jammed at the very top) */}
-        <div />
+      {/* Centered content */}
+      <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-6 text-center">
+        {/* Title */}
+        <h1 className="text-[44px] font-semibold text-white drop-shadow-md">
+          Nouk
+        </h1>
 
-        {/* Title + tagline */}
-        <section>
-          <h1 className="text-4xl font-semibold tracking-[0.16em] uppercase">
-            nouk.space
-          </h1>
-          <p className="mt-4 mx-auto max-w-md text-base leading-relaxed opacity-90">
-            A quiet little house for short-lived threads. Share something small,
-            let it breathe, and let it fade.
-          </p>
-        </section>
+        {/* Subtitle */}
+        <p className="mt-3 max-w-[320px] text-[16px] leading-snug text-white/90 drop-shadow-sm">
+          A quiet house for your thoughts, feelings, and late-night moments.
+        </p>
 
-        {/* Enter button near bottom */}
-        <section className="mb-2">
-          <Link
-            href="/home"
-            className="inline-flex w-full max-w-xs items-center justify-center rounded-full bg-[#39D5FF] px-6 py-3 text-base font-semibold text-[#043045] shadow-[0_14px_30px_rgba(0,0,0,0.45)] mx-auto"
-          >
-            Enter the House
-          </Link>
-        </section>
+        {/* CTA */}
+        <button
+          onClick={() => router.push('/home')}
+          className="mt-6 rounded-full bg-[var(--accent)] px-8 py-3 text-[16px] font-medium text-[var(--paper)] shadow-[0_8px_28px_rgba(15,23,42,0.55)] active:scale-95 transition-transform"
+        >
+          Enter the House
+        </button>
       </div>
     </main>
   );
