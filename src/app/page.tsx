@@ -1,63 +1,38 @@
-'use client';
-
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { DM_Serif_Display, Nunito } from 'next/font/google';
-
-const dmSerif = DM_Serif_Display({
-  subsets: ['latin'],
-  weight: '400',
-});
-
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['600'],
-});
+import Link from "next/link";
 
 export default function LandingPage() {
-  const router = useRouter();
-
-  const handleEnter = () => {
-    router.push('/home');
-  };
-
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black">
-      {/* Background image */}
-      <Image
-        src="/house-landing.jpg"
-        alt="A lantern-lit forest path leading to a cozy house under a full moon."
-        fill
-        priority
-        className="object-cover"
-      />
+    <main className="min-h-screen w-full overflow-hidden bg-black">
+      <div
+        className="relative h-screen w-full bg-cover bg-center"
+        style={{ backgroundImage: "url('/house-landing.jpg')" }}
+      >
+        {/* Soft dark overlay so the title + button pop but the art is still visible */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/40" />
 
-      {/* Subtle vignette so text reads well */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-black/60" />
+        {/* Centered stack for title + button */}
+        <div className="relative z-10 flex h-full flex-col items-center justify-center">
+          <div className="flex flex-col items-center gap-8 -translate-y-6">
+            {/* Title above the bright part of the moon */}
+            <h1 className="text-5xl md:text-6xl font-serif text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]">
+              Nouk
+            </h1>
 
-      {/* Content overlay */}
-      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center px-6 pb-16">
-        {/* Title – sitting in the upper-middle over the moon */}
-        <div className="flex flex-col items-center -mt-16">
-          <h1
-            className={`${dmSerif.className} text-5xl sm:text-6xl text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]`}
-          >
-            Nouk
-          </h1>
+            {/* Lantern-gold pill button */}
+            <Link
+              href="/home"
+              className="rounded-full px-10 py-3 text-lg font-medium
+                         bg-amber-200/90 text-[#4b300f]
+                         shadow-[0_18px_35px_rgba(0,0,0,0.55)]
+                         backdrop-blur-sm
+                         transition-colors duration-200
+                         hover:bg-amber-100/95 active:bg-amber-200"
+            >
+              Enter the House
+            </Link>
+          </div>
         </div>
-
-        {/* Spacer to keep button lower, nearer the house / path */}
-        <div className="h-10" />
-
-        {/* Enter button */}
-        <button
-          type="button"
-          onClick={handleEnter}
-          className={`${nunito.className} mt-2 rounded-full bg-[#F4C26B] px-10 py-3 text-lg font-semibold text-[#5b3512] shadow-[0_14px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform duration-150`}
-        >
-          Enter the House
-        </button>
       </div>
-    </div>
+    </main>
   );
 }
