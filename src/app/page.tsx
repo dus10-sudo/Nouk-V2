@@ -1,85 +1,100 @@
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export default function LandingPage() {
   const router = useRouter();
-  const [isPlayingTransition, setIsPlayingTransition] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  useEffect(() => {
+    // Trigger fade-in once mounted
+    setIsReady(true);
+  }, []);
+
   const handleEnter = () => {
-    if (isPlayingTransition) return;
+    const video = videoRef.current;
 
-    setIsPlayingTransition(true);
+    if (video) {
+      setIsPlaying(true);
+      video.currentTime = 0;
 
-    const vid = videoRef.current;
-    if (vid) {
-      vid.currentTime = 0;
-      vid
-        .play()
-        .catch(() => {
-          // If autoplay is blocked, just go straight inside
-          router.push('/home');
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // If autoplay is blocked, just go straight in
+          router.push("/home");
         });
+      }
     } else {
-      router.push('/home');
+      router.push("/home");
     }
   };
 
   const handleVideoEnd = () => {
-    router.push('/home');
+    router.push("/home");
   };
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-black">
+    <main className="relative h-[100dvh] w-full overflow-hidden bg-black">
       {/* Background illustration */}
-      <img
+      <Image
         src="/house-landing.jpg"
-        alt="A cozy lantern-lit cottage at night in the forest"
-        className="absolute inset-0 z-0 h-full w-full object-cover"
+        alt="A cozy cottage glowing under a full moon in the woods"
+        fill
+        priority
+        className="object-cover"
       />
 
-      {/* Transition video overlay */}
+      {/* Gradient to keep text readable */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/70" />
+
+      {/* Entry animation video */}
       <video
         ref={videoRef}
-        className={`absolute inset-0 z-10 h-full w-full object-cover transition-opacity duration-500 ${
-          isPlayingTransition ? 'opacity-100' : 'opacity-0'
-        }`}
         src="/enter-house.mp4"
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+          isPlaying ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onEnded={handleVideoEnd}
         playsInline
         muted
-        onEnded={handleVideoEnd}
       />
 
-      {/* Dark vignette for readability over the background (not the video) */}
-      <div
-        className={`pointer-events-none fixed inset-0 z-15 bg-[radial-gradient(circle_at_top,_rgba(0,0,0,0.25),_rgba(0,0,0,0.65))] transition-opacity duration-500 ${
-          isPlayingTransition ? 'opacity-0' : 'opacity-100'
-        }`}
-      />
+      {/* Content */}
+      <div className="relative z-10 flex h-full flex-col items-center">
+        {/* Title */}
+        <div
+          className={`mt-16 text-center text-4xl tracking-[0.4em] text-white sm:mt-20 sm:text-5xl transition-all duration-700 ease-out ${
+            isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+          }`}
+        >
+          N O U K
+        </div>
 
-      {/* Title: fixed near the treetops */}
-      <div
-        className={`pointer-events-none fixed inset-x-0 top-[12vh] z-20 flex justify-center transition-opacity duration-400 ${
-          isPlayingTransition ? 'opacity-0' : 'opacity-100'
-        }`}
-      >
-        <h1 className="fade-in-title text-5xl tracking-[0.35em] text-white sm:text-6xl">
-          NOUK
-        </h1>
-      </div>
+        {/* Spacer to keep the house visible and push button down */}
+        <div className="flex-1" />
 
-      {/* Button: fixed over the path, above the flowers */}
-      <div
-        className={`fixed inset-x-0 bottom-[11vh] z-20 flex justify-center transition-opacity duration-400 ${
-          isPlayingTransition ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}
-      >
+        {/* Enter button */}
         <button
           type="button"
           onClick={handleEnter}
-          className="fade-in-button glow-button rounded-full bg-[#f2cc73] px-10 py-4 text-lg font-medium text-[#5b3b22] shadow-[0_10px_25px_rgba(0,0,0,0.45)] sm:px-12 sm:py-4 sm:text-xl"
+          disabled={isPlaying}
+          className={`mb-20 rounded-full px-9 py-4 text-base font-medium outline-none shadow-lg shadow-amber-400/40
+          bg-amber-300/95 text-stone-900
+          transition-all duration-500 ease-out
+          hover:bg-amber-200 hover:shadow-amber-200/70 active:scale-95
+          sm:mb-24 sm:px-12 sm:py-4 sm:text-lg
+          ${
+            isPlaying
+              ? "scale-95 opacity-0 pointer-events-none"
+              : "opacity-100"
+          }
+          ${isReady ? "translate-y-0" : "translate-y-6"}
+          animate-pulse`}
         >
           Enter the House
         </button>
