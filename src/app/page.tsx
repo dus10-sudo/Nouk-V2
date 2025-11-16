@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import BottomNav from '../components/BottomNav';
 
 type Room = {
   slug: string;
@@ -7,7 +11,7 @@ type Room = {
   icon: string;
 };
 
-const ROOMS: Room[] = [
+const rooms: Room[] = [
   {
     slug: 'sunroom',
     name: 'Sunroom',
@@ -41,56 +45,136 @@ const ROOMS: Room[] = [
   {
     slug: 'library',
     name: 'Library',
-    description:
-      'For journaling, prompts, and more thoughtful writing.',
+    description: 'For journaling, prompts, and more thoughtful writing.',
     icon: '📖',
   },
 ];
 
-export default function HomePage() {
+type ShareSheetProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+function ShareSheet({ open, onClose }: ShareSheetProps) {
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setValue('');
+    }
+  }, [open]);
+
+  if (!open) return null;
+
   return (
-    <main
-      className="min-h-screen text-[#5a3b25]"
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-t-3xl bg-[#f9e6c8] px-5 pb-6 pt-4 shadow-[0_-18px_40px_rgba(0,0,0,0.35)]">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#d8b896]" />
+
+        <h2 className="text-center text-lg font-semibold text-[#5b3b25]">
+          Share a thought
+        </h2>
+        <p className="mt-1 text-center text-sm text-[#7a5635]">
+          Leave something small. Threads fade after a little while.
+        </p>
+
+        <div className="mt-4 rounded-2xl border border-[#efd6b4] bg-[#fdf3e4] px-3 py-2">
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+            className="w-full resize-none border-none bg-transparent text-sm text-[#5b3b25] outline-none placeholder:text-[#c3a98a]"
+            placeholder="What’s on your mind?"
+          />
+        </div>
+
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full bg-[#f3ddc0] py-2.5 text-sm font-semibold text-[#5b3b25] shadow-[0_8px_18px_rgba(0,0,0,0.12)]"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            // placeholder for real submit later
+            onClick={onClose}
+            className="flex-1 rounded-full bg-[#e58439] py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
+          >
+            Post (soon)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [shareOpen, setShareOpen] = useState(false);
+
+  // Listen for the fallback custom event from BottomNav (in case the nav
+  // gets used somewhere without an explicit onShareClick prop later).
+  useEffect(() => {
+    const handler = () => setShareOpen(true);
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('nouk-open-share', handler as EventListener);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('nouk-open-share', handler as EventListener);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className="min-h-[100dvh] w-full"
       style={{
         background:
-          'radial-gradient(circle at top, #f7ebd5 0, #f1d8b7 45%, #e0bc94 100%)',
+          'radial-gradient(circle at top, #fbead2 0%, #f2d3a6 45%, #d9aa75 100%)',
       }}
     >
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-28 pt-10">
-        {/* Tagline only – no extra Nouk at top */}
-        <section className="mb-6 text-center">
-          <p className="text-sm leading-relaxed text-[#6c4a2d]">
-            A quiet little house for short-lived threads. Share something
-            small, let it breathe, and let it fade.
-          </p>
-        </section>
+      <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-4 pb-28 pt-10 text-[#5b3b25]">
+        {/* Tagline only – no extra Nouk heading at top */}
+        <p className="text-center text-base leading-relaxed">
+          A quiet little house for short-lived threads. Share something small,
+          let it breathe, and let it fade.
+        </p>
 
-        {/* Rooms */}
-        <section className="flex flex-1 flex-col gap-3 pb-4">
-          {ROOMS.map((room) => (
+        {/* Rooms list */}
+        <div className="mt-7 space-y-4">
+          {rooms.map((room) => (
             <Link
               key={room.slug}
               href={`/room/${room.slug}`}
-              className="block rounded-[28px] bg-[#fbead5] px-4 py-4 shadow-[0_12px_30px_rgba(0,0,0,0.16)] transition-transform active:translate-y-[1px]"
+              className="block"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fdf4e7] text-xl shadow-[0_8px_16px_rgba(0,0,0,0.14)]">
-                  {room.icon}
+              <div className="flex items-center gap-3 rounded-[26px] bg-[#f8e7c8] px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.16)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 shadow-[0_12px_24px_rgba(0,0,0,0.18)]">
+                  <span className="text-2xl" aria-hidden="true">
+                    {room.icon}
+                  </span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-base font-semibold text-[#5a3b25]">
-                    {room.name}
-                  </h2>
-                  <p className="mt-1 text-sm leading-snug text-[#7b5a3a]">
+                  <div className="text-base font-semibold">{room.name}</div>
+                  <p className="mt-1 text-sm text-[#6e4b30]">
                     {room.description}
                   </p>
                 </div>
-                <span className="text-lg text-[#c3996b]">›</span>
+                <div className="text-lg text-[#c9a178]" aria-hidden="true">
+                  ›
+                </div>
               </div>
             </Link>
           ))}
-        </section>
+        </div>
       </div>
-    </main>
+
+      <BottomNav onShareClick={() => setShareOpen(true)} />
+      <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} />
+    </div>
   );
 }
