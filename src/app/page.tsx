@@ -1,90 +1,86 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
   const router = useRouter();
   const [isPlayingTransition, setIsPlayingTransition] = useState(false);
-
-  // Lock scrolling on the landing page
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const handleEnter = () => {
+    if (isPlayingTransition) return;
+
     setIsPlayingTransition(true);
+
+    const vid = videoRef.current;
+    if (vid) {
+      vid.currentTime = 0;
+      vid
+        .play()
+        .catch(() => {
+          // If autoplay fails (iOS / browser rules), just go straight in
+          router.push('/home');
+        });
+    } else {
+      router.push('/home');
+    }
   };
 
   const handleVideoEnd = () => {
-    router.push("/home");
+    router.push('/home');
   };
 
   return (
-    <main className="relative h-[100vh] w-full overflow-hidden">
-      {/* Static background image */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-700 ${
-          isPlayingTransition ? "opacity-0" : "opacity-100"
-        }`}
-      >
-        <Image
+    <main className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Static background image (fallback + base) */}
+      <div className="pointer-events-none absolute inset-0">
+        <img
           src="/house-landing.jpg"
-          alt="A lantern-lit cottage in the forest under a full moon"
-          fill
-          priority
-          className="object-cover"
+          alt="A cozy lantern-lit cottage at night in the forest"
+          className="h-full w-full object-cover"
         />
       </div>
 
-      {/* Video that plays after clicking the button */}
-      {isPlayingTransition && (
-        <video
-          key="enter-house-video"
-          className="absolute inset-0 h-full w-full object-cover opacity-100 transition-opacity duration-700"
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleVideoEnd}
-        >
-          <source src="/enter-house.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      )}
+      {/* Transition video overlay (only visible during enter animation) */}
+      <video
+        ref={videoRef}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+          isPlayingTransition ? 'opacity-100' : 'opacity-0'
+        }`}
+        src="/enter-house.mp4"
+        playsInline
+        muted
+        onEnded={handleVideoEnd}
+      />
 
-      {/* Gradient overlay for contrast */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/35" />
+      {/* Dark vignette overlay for readability (fades away during transition) */}
+      <div
+        className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,0,0,0.25),_rgba(0,0,0,0.65))] transition-opacity duration-500 ${
+          isPlayingTransition ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
 
-      {/* Title + button (hidden once transition starts) */}
-      {!isPlayingTransition && (
-        <div className="relative z-10 flex h-full flex-col justify-between">
-          {/* Top spacer so NOUK sits in the treetops / above the moon */}
-          <div className="h-[12vh]" />
-
-          {/* Center title */}
-          <div className="flex flex-col items-center">
-            <h1 className="text-5xl tracking-[0.35em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.7)]">
-              NOUK
-            </h1>
-          </div>
-
-          {/* Bottom button on the path */}
-          <div className="mb-10 flex justify-center">
-            <button
-              type="button"
-              onClick={handleEnter}
-              className="rounded-full bg-[#f2cc73] px-10 py-4 text-lg font-medium text-[#5b3b22] shadow-[0_10px_25px_rgba(0,0,0,0.45)] transition-transform duration-150 active:translate-y-[1px] active:shadow-[0_6px_16px_rgba(0,0,0,0.45)]"
-            >
-              Enter the House
-            </button>
-          </div>
+      {/* Title + button layer */}
+      <div className="relative z-10 h-full w-full">
+        {/* NOUK title (up in the treetops / above moon) */}
+        <div className="absolute top-[12vh] flex w-full justify-center">
+          <h1 className="fade-in-title text-5xl tracking-[0.35em] text-white sm:text-6xl">
+            NOUK
+          </h1>
         </div>
-      )}
+
+        {/* Enter button (hovering over the path) */}
+        <div className="absolute bottom-[22vh] flex w-full justify-center">
+          <button
+            type="button"
+            onClick={handleEnter}
+            className="fade-in-button glow-button rounded-full bg-[#f2cc73] px-10 py-4 text-lg font-medium text-[#5b3b22] shadow-[0_10px_25px_rgba(0,0,0,0.45)] sm:px-12 sm:py-4 sm:text-xl"
+          >
+            Enter the House
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
