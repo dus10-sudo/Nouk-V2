@@ -2,58 +2,61 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase, type Room } from '@/lib/supabase';
 
-type ShareRoom = {
-  id: string;
-  slug: string;
-  name: string;
-};
+export const dynamic = 'force-dynamic';
 
 export default function SharePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialRoomFromUrl = searchParams?.get('room') ?? undefined;
 
-  const [rooms, setRooms] = useState<ShareRoom[]>([]);
-  const [roomSlug, setRoomSlug] = useState<string | undefined>(undefined);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [roomSlug, setRoomSlug] = useState<string | undefined>(
+    initialRoomFromUrl
+  );
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [link, setLink] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Read ?room= from the URL on the client (no useSearchParams)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('room') || undefined;
-    if (slug) {
-      setRoomSlug(slug);
-    }
-  }, []);
+    let cancelled = false;
 
-  // Load rooms from Supabase and set a default if none selected
-  useEffect(() => {
     async function loadRooms() {
       const { data, error } = await supabase
         .from('rooms')
-        .select('id, slug, name')
-        .order('name', { ascending: true });
+        .select('id, slug, title')
+        .eq('is_active', true)
+        .order('title', { ascending: true });
 
       if (error) {
-        console.error('Error loading rooms:', error);
+        console.error('Error loading rooms', error);
         return;
       }
 
-      if (data && data.length > 0) {
-        setRooms(data as ShareRoom[]);
+      if (!data || cancelled) return;
 
-        // If no room selected yet, default to the first one
-        setRoomSlug((current) => current || data[0].slug);
+      const mapped = data as Room[];
+      setRooms(mapped);
+
+      // Decide which room should be selected
+      if (!roomSlug) {
+        const fromUrl = initialRoomFromUrl;
+        const defaultSlug =
+          fromUrl && mapped.some((r) => r.slug === fromUrl)
+            ? fromUrl
+            : mapped[0]?.slug;
+        setRoomSlug(defaultSlug);
       }
     }
 
     loadRooms();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [roomSlug, initialRoomFromUrl]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,8 +65,10 @@ export default function SharePage() {
     const trimmedBody = body.trim();
     const trimmedLink = link.trim();
 
-    if (!roomSlug) return;
-    if (!trimmedTitle && !trimmedBody) return;
+    if (!roomSlug || (!trimmedTitle && !trimmedBody)) {
+      // nothing to send
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -73,7 +78,7 @@ export default function SharePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomSlug,
-          title: trimmedTitle || 'Untitled',
+          title: trimmedTitle || null,
           body: trimmedBody || null,
           link_url: trimmedLink || null,
         }),
@@ -85,16 +90,19 @@ export default function SharePage() {
         return;
       }
 
-      // Go back to the feed for this room
+      // Go back to the room feed
       router.push(`/home?room=${roomSlug}`);
     } catch (err) {
-      console.error('Unexpected error creating thread:', err);
+      console.error(err);
       setIsSubmitting(false);
     }
   }
 
+  const canSubmit =
+    !!roomSlug && (!!title.trim() || !!body.trim());
+
   return (
-    <main className="min-h-screen bg-[#f5eedf]">
+    <main className="min-h-screen bg-[#f5eedf] text-neutral-900">
       <div className="max-w-xl mx-auto px-4 pb-16 pt-8">
         <header className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-neutral-900">
@@ -116,12 +124,19 @@ export default function SharePage() {
             </label>
             <select
               value={roomSlug || ''}
-              onChange={(e) => setRoomSlug(e.target.value)}
-              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
+              onChange={(e) =>
+                setRoomSlug(e.target.value || undefined)
+              }
+              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
             >
+              {rooms.length === 0 && (
+                <option value="" disabled>
+                  Loading…
+                </option>
+              )}
               {rooms.map((room) => (
                 <option key={room.id} value={room.slug}>
-                  {room.name}
+                  {room.title}
                 </option>
               ))}
             </select>
@@ -136,7 +151,7 @@ export default function SharePage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give it a tiny headline…"
-              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
+              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
             />
           </div>
 
@@ -150,7 +165,7 @@ export default function SharePage() {
               onChange={(e) => setBody(e.target.value)}
               rows={4}
               placeholder="Say something small to start…"
-              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800 resize-none"
+              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800 resize-none"
             />
           </div>
 
@@ -163,7 +178,7 @@ export default function SharePage() {
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="YouTube, Spotify, article, etc…"
-              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
+              className="w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-neutral-800"
             />
           </div>
 
@@ -178,7 +193,7 @@ export default function SharePage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !roomSlug}
+              disabled={isSubmitting || !canSubmit}
               className="rounded-2xl bg-neutral-900 text-[#f5eedf] px-4 py-2 text-sm font-medium shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Posting…' : 'Post it'}
