@@ -17,22 +17,18 @@ export default function LandingPage() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background: image OR video */}
+      {/* Background image OR video */}
       {!playing ? (
         <>
-          {/* Forest image */}
           <img
             src="/house-landing.jpg"
             alt="Nouk Forest"
             className="absolute inset-0 h-full w-full object-cover"
           />
-
-          {/* Subtle dark overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-20" />
         </>
       ) : (
         <>
-          {/* Entrance video */}
           <video
             src="/enter-house.mp4"
             className="absolute inset-0 h-full w-full object-cover"
@@ -41,26 +37,23 @@ export default function LandingPage() {
             playsInline
             onEnded={handleVideoEnd}
           />
-          {/* Optional: darker overlay while video plays */}
           <div className="absolute inset-0 bg-black bg-opacity-10" />
         </>
       )}
 
-      {/* Title (kept on top even while video plays) */}
-      <div className="absolute top-10 w-full text-center pointer-events-none">
-        <h1 className="cinzel-title text-white text-4xl drop-shadow-lg">
-          N O U K
-        </h1>
-      </div>
-
-      {/* Enter button – hidden once video starts */}
+      {/* Title — hides when video begins */}
       {!playing && (
-        <div className="absolute bottom-10 w-full flex justify-center">
-          <button
-            type="button"
-            onClick={handleEnter}
-            className="glow-button"
-          >
+        <div className="absolute top-12 w-full text-center">
+          <h1 className="cinzel-title text-white text-4xl drop-shadow-lg">
+            N O U K
+          </h1>
+        </div>
+      )}
+
+      {/* Button — moved UP, also hides while playing */}
+      {!playing && (
+        <div className="absolute w-full flex justify-center bottom-20 sm:bottom-14">
+          <button onClick={handleEnter} className="glow-button">
             Enter the House
           </button>
         </div>
