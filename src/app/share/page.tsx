@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 type ShareRoom = {
@@ -13,16 +13,25 @@ type ShareRoom = {
 
 export default function SharePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialRoomSlug = searchParams.get('room') || undefined;
 
   const [rooms, setRooms] = useState<ShareRoom[]>([]);
-  const [roomSlug, setRoomSlug] = useState<string | undefined>(initialRoomSlug);
+  const [roomSlug, setRoomSlug] = useState<string | undefined>(undefined);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [link, setLink] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Read ?room= from the URL on the client (no useSearchParams)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('room') || undefined;
+    if (slug) {
+      setRoomSlug(slug);
+    }
+  }, []);
+
+  // Load rooms from Supabase and set a default if none selected
   useEffect(() => {
     async function loadRooms() {
       const { data, error } = await supabase
@@ -37,14 +46,13 @@ export default function SharePage() {
 
       if (data && data.length > 0) {
         setRooms(data as ShareRoom[]);
-        if (!roomSlug) {
-          setRoomSlug(data[0].slug);
-        }
+
+        // If no room selected yet, default to the first one
+        setRoomSlug((current) => current || data[0].slug);
       }
     }
 
     loadRooms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -77,6 +85,7 @@ export default function SharePage() {
         return;
       }
 
+      // Go back to the feed for this room
       router.push(`/home?room=${roomSlug}`);
     } catch (err) {
       console.error('Unexpected error creating thread:', err);
@@ -179,4 +188,4 @@ export default function SharePage() {
       </div>
     </main>
   );
-            }
+}
