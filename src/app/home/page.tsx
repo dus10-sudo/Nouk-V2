@@ -1,222 +1,302 @@
+// src/app/home/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase, Room } from '@/lib/supabase';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
-type ThreadRow = {
+type Room = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+type Thread = {
   id: string;
   title: string | null;
   body: string | null;
   link_url: string | null;
   created_at: string;
   room_id: string;
+  rooms?: {
+    id: string;
+    slug: string;
+    name: string;
+  } | null;
 };
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+function formatTimeAgo(iso: string) {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diffSec = Math.floor((now - then) / 1000);
+
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
+}
+
+function getRoomSlugFromLocation(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("room") || undefined;
+  return slug || undefined;
 }
 
 export default function HomePage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialSlug = searchParams.get('room') || undefined;
-
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [activeSlug, setActiveSlug] = useState<string | undefined>(initialSlug);
-  const [threads, setThreads] = useState<ThreadRow[]>([]);
+  const [activeRoomSlug, setActiveRoomSlug] = useState<string | undefined>(
+    undefined
+  );
+  const [threads, setThreads] = useState<Thread[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   const [isLoadingThreads, setIsLoadingThreads] = useState(false);
 
-  // Load categories
+  // Load rooms once on mount
   useEffect(() => {
+    let cancelled = false;
+
     async function loadRooms() {
       setIsLoadingRooms(true);
       const { data, error } = await supabase
-        .from('rooms')
-        .select('id, slug, title')
-        .order('title', { ascending: true });
+        .from("rooms")
+        .select("id, slug, name")
+        .order("name", { ascending: true });
 
       if (error) {
-        console.error('Error loading rooms', error);
-        setRooms([]);
+        console.error("[home] error loading rooms", error);
+        setIsLoadingRooms(false);
+        return;
+      }
+      if (!data || cancelled) {
         setIsLoadingRooms(false);
         return;
       }
 
-      const typed = (data || []) as Room[];
-      setRooms(typed);
+      setRooms(data as Room[]);
 
-      if (!activeSlug && typed.length > 0) {
-        setActiveSlug(typed[0].slug);
-      }
+      // Decide which room should be active
+      const slugFromUrl = getRoomSlugFromLocation();
+      const matchingFromUrl = slugFromUrl
+        ? data.find((r) => r.slug === slugFromUrl)
+        : null;
 
+      const firstRoom = matchingFromUrl ?? data[0] ?? null;
+
+      setActiveRoomSlug(firstRoom ? firstRoom.slug : undefined);
       setIsLoadingRooms(false);
     }
 
     loadRooms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const activeRoom =
-    rooms.find((r) => r.slug === activeSlug) || (rooms.length > 0 ? rooms[0] : undefined);
-
-  // Load threads for active category
+  // Load threads whenever activeRoomSlug changes
   useEffect(() => {
-    if (!activeRoom) {
-      setThreads([]);
-      return;
-    }
+    let cancelled = false;
 
     async function loadThreads() {
-      setIsLoadingThreads(true);
-      const { data, error } = await supabase
-        .from('threads')
-        .select('id, title, body, link_url, created_at, room_id')
-        .eq('room_id', activeRoom.id)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading threads', error);
+      if (!activeRoomSlug) {
         setThreads([]);
-      } else {
-        setThreads((data || []) as ThreadRow[]);
+        return;
       }
 
-      setIsLoadingThreads(false);
+      setIsLoadingThreads(true);
+
+      try {
+        const res = await fetch(`/api/threads?room=${encodeURIComponent(activeRoomSlug)}`, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+        });
+
+        if (!res.ok) {
+          console.error("[home] failed to fetch threads", await res.text());
+          if (!cancelled) {
+            setThreads([]);
+          }
+          setIsLoadingThreads(false);
+          return;
+        }
+
+        const json = await res.json();
+        if (!cancelled) {
+          setThreads((json.threads ?? []) as Thread[]);
+        }
+      } catch (err) {
+        console.error("[home] error fetching threads", err);
+        if (!cancelled) {
+          setThreads([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingThreads(false);
+        }
+      }
     }
 
     loadThreads();
-  }, [activeRoom]);
 
-  function handleChangeRoom(slug: string) {
-    setActiveSlug(slug);
-    router.push(`/home?room=${slug}`);
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [activeRoomSlug]);
 
-  function handleShare() {
-    if (!activeRoom) return;
-    router.push(`/share?room=${activeRoom.slug}`);
-  }
-
-  if (isLoadingRooms && rooms.length === 0) {
-    return (
-      <main className="min-h-screen bg-[#f5eedf] flex items-center justify-center px-6 text-center">
-        <p className="text-sm text-neutral-600">
-          Loading Nouk&hellip;
-        </p>
-      </main>
-    );
-  }
-
-  if (!isLoadingRooms && rooms.length === 0) {
-    return (
-      <main className="min-h-screen bg-[#f5eedf] flex items-center justify-center px-6 text-center">
-        <p className="text-sm text-neutral-700">
-          Nouk is almost ready, but there are no categories yet. Add a few rows to the
-          <span className="font-mono"> rooms</span> table (e.g. gaming, music, movies) in Supabase.
-        </p>
-      </main>
-    );
-  }
+  const activeRoom = rooms.find((r) => r.slug === activeRoomSlug) ?? null;
 
   return (
-    <main className="min-h-screen bg-[#f5eedf]">
-      <div className="max-w-xl mx-auto px-4 pb-16 pt-10">
+    <main className="min-h-screen bg-[#f5eedf] text-neutral-900">
+      <div className="max-w-xl mx-auto px-4 pb-6 pt-4">
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-neutral-900">Inside Nouk</h1>
-          <p className="mt-2 text-sm text-neutral-600">
-            Small posts. Short conversations. Everything fades after a while.
-          </p>
+        <header className="mb-4 flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-lg font-semibold tracking-wide">
+              Today in Nouk
+            </h1>
+            <p className="text-xs text-neutral-600">
+              A small corner of the internet for quick, passing conversations.
+            </p>
+          </div>
+          <Link
+            href="/share"
+            className="rounded-full bg-neutral-900 text-[#f5eedf] px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-black/90"
+          >
+            New post
+          </Link>
         </header>
 
-        {/* Category pills */}
-        <div className="flex flex-wrap justify-center gap-3 mb-6">
-          {rooms.map((room) => {
-            const isActive = activeRoom && room.id === activeRoom.id;
-            return (
-              <button
-                key={room.id}
-                type="button"
-                onClick={() => handleChangeRoom(room.slug)}
-                className={
-                  'px-4 py-2 rounded-full text-sm border transition ' +
-                  (isActive
-                    ? 'bg-neutral-900 text-[#f5eedf] border-neutral-900 shadow-md'
-                    : 'bg-[#f5eedf] text-neutral-800 border-neutral-400')
-                }
-              >
-                {room.title}
-              </button>
-            );
-          })}
-        </div>
+        {/* Category row */}
+        <section className="mb-4">
+          {isLoadingRooms ? (
+            <div className="h-8 rounded-full bg-neutral-200 animate-pulse" />
+          ) : rooms.length === 0 ? (
+            <p className="text-sm text-neutral-600">
+              No categories yet. Add some rooms in your database.
+            </p>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {rooms.map((room) => {
+                const isActive = room.slug === activeRoomSlug;
+                return (
+                  <button
+                    key={room.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveRoomSlug(room.slug);
+                      // update URL query (no reload)
+                      if (typeof window !== "undefined") {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("room", room.slug);
+                        window.history.replaceState(null, "", url.toString());
+                      }
+                    }}
+                    className={[
+                      "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
+                      isActive
+                        ? "bg-neutral-900 text-[#f5eedf] border-neutral-900"
+                        : "bg-white text-neutral-800 border-neutral-300 hover:bg-neutral-100",
+                    ].join(" ")}
+                  >
+                    {room.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-        {/* Share button */}
-        <div className="flex justify-center mb-6">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="px-6 py-2 rounded-full bg-neutral-900 text-[#f5eedf] text-sm font-medium shadow-md active:scale-[0.98]"
-          >
-            Share a Thought
-          </button>
-        </div>
-
-        {/* Threads list */}
-        {isLoadingThreads ? (
-          <p className="mt-10 text-center text-sm text-neutral-600">Loading posts&hellip;</p>
-        ) : threads.length === 0 ? (
-          <p className="mt-10 text-center text-sm text-neutral-600">
-            It&apos;s quiet in <span className="font-medium">{activeRoom?.title}</span>. Be the first to
-            post something.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {threads.map((thread) => (
+        {/* Thread list */}
+        <section className="space-y-3">
+          {activeRoom && (
+            <div className="flex items-center justify-between text-xs text-neutral-600">
+              <span>
+                Viewing posts in <span className="font-semibold">{activeRoom.name}</span>
+              </span>
               <button
-                key={thread.id}
                 type="button"
-                onClick={() => router.push(`/thread/${thread.id}`)}
-                className="w-full text-left bg-white rounded-3xl shadow-sm border border-neutral-200 px-4 py-3 active:scale-[0.99]"
+                onClick={() => {
+                  // reload threads
+                  setActiveRoomSlug((slug) => (slug ? slug : activeRoom.slug));
+                }}
+                className="underline underline-offset-2"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    {thread.title && (
-                      <p className="text-sm font-semibold text-neutral-900 break-words">
-                        {thread.title}
-                      </p>
-                    )}
-                    {thread.body && (
-                      <p className="mt-1 text-sm text-neutral-800 break-words line-clamp-2">
-                        {thread.body}
-                      </p>
-                    )}
-                    {thread.link_url && (
-                      <p className="mt-2 text-xs text-neutral-500 break-all">
-                        <span className="font-medium">Link:</span>{' '}
-                        <span>{thread.link_url}</span>
-                      </p>
-                    )}
-                  </div>
-                  <p className="ml-2 mt-1 shrink-0 text-[11px] text-neutral-500 text-right">
-                    {formatDate(thread.created_at)}
-                  </p>
-                </div>
+                Refresh
               </button>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          {isLoadingThreads ? (
+            <div className="space-y-2 mt-2">
+              <div className="h-16 rounded-2xl bg-neutral-200 animate-pulse" />
+              <div className="h-16 rounded-2xl bg-neutral-200 animate-pulse" />
+            </div>
+          ) : threads.length === 0 ? (
+            <div className="mt-6 text-center text-sm text-neutral-600">
+              <p>No posts yet in this category.</p>
+              <p className="mt-1">
+                Be the first to{" "}
+                <Link href="/share" className="underline font-medium">
+                  start something
+                </Link>
+                .
+              </p>
+            </div>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {threads.map((thread) => {
+                const title =
+                  thread.title && thread.title.trim().length > 0
+                    ? thread.title.trim()
+                    : "Untitled post";
+
+                const preview =
+                  thread.body && thread.body.trim().length > 0
+                    ? thread.body.trim()
+                    : thread.link_url
+                    ? thread.link_url
+                    : "";
+
+                const roomName =
+                  thread.rooms?.name ||
+                  activeRoom?.name ||
+                  "Somewhere in the house";
+
+                return (
+                  <Link
+                    key={thread.id}
+                    href={`/thread/${thread.id}`}
+                    className="block rounded-2xl bg-white border border-neutral-200 px-3 py-3 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="text-xs text-neutral-500">
+                        {roomName}
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {formatTimeAgo(thread.created_at)}
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium text-neutral-900 line-clamp-2">
+                      {title}
+                    </div>
+                    {preview && (
+                      <div className="mt-1 text-xs text-neutral-700 line-clamp-2">
+                        {preview}
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Bottom spacer so it doesn’t hit device nav bar */}
+        <div className="h-8" />
       </div>
     </main>
   );
