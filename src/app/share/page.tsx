@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase, Room } from '@/lib/supabase';
+import { supabase, type Room } from '@/lib/supabase';
 
 export default function SharePage() {
   const router = useRouter();
@@ -19,35 +19,50 @@ export default function SharePage() {
 
   useEffect(() => {
     async function loadRooms() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('rooms')
-        .select('id, slug, title')
-        .order('title', { ascending: true });
+        .select('id, slug, name')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error loading rooms:', error);
+        return;
+      }
+
       if (data && data.length > 0) {
-        setRooms(data);
+        setRooms(data as Room[]);
+        // if no room was preselected via ?room=, default to the first
         if (!roomSlug) {
           setRoomSlug(data[0].slug);
         }
       }
     }
+
     loadRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!roomSlug || !title.trim() && !body.trim()) return;
+
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    const trimmedLink = link.trim();
+
+    if (!roomSlug) return;
+    if (!trimmedTitle && !trimmedBody) return;
 
     setIsSubmitting(true);
+
     try {
       const res = await fetch('/api/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomSlug,
-          title: title.trim(),
-          body: body.trim() || null,
-          link_url: link.trim() || null,
+          title: trimmedTitle || 'Untitled',
+          body: trimmedBody || null,
+          link_url: trimmedLink || null,
         }),
       });
 
@@ -57,9 +72,10 @@ export default function SharePage() {
         return;
       }
 
+      // go back to the home/feed for that room
       router.push(`/home?room=${roomSlug}`);
     } catch (err) {
-      console.error(err);
+      console.error('Unexpected error creating thread:', err);
       setIsSubmitting(false);
     }
   }
@@ -92,7 +108,7 @@ export default function SharePage() {
             >
               {rooms.map((room) => (
                 <option key={room.id} value={room.slug}>
-                  {room.title}
+                  {room.name}
                 </option>
               ))}
             </select>
