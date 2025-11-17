@@ -15,9 +15,8 @@ type ThreadRow = {
   title: string | null;
   created_at: string;
   link_url: string | null;
-  rooms: {
-    name: string;
-  } | null;
+  // NOTE: Supabase returns related rows as an array, so we type it that way
+  rooms: { name: string }[] | null;
   replies: ReplyRow[] | null;
 };
 
@@ -36,13 +35,11 @@ async function addReply(formData: FormData) {
 
   const user_token = crypto.randomUUID();
 
-  const { error } = await supabase
-    .from("replies")
-    .insert({
-      thread_id,
-      body,
-      user_token,
-    });
+  const { error } = await supabase.from("replies").insert({
+    thread_id,
+    body,
+    user_token,
+  });
 
   if (error) {
     console.error("[thread] Error adding reply", error);
@@ -62,7 +59,14 @@ export default async function ThreadPage({
   const { data, error } = await supabase
     .from("threads")
     .select(
-      "id, title, created_at, link_url, rooms(name), replies(id, body, created_at)"
+      `
+      id,
+      title,
+      created_at,
+      link_url,
+      rooms(name),
+      replies(id, body, created_at)
+    `
     )
     .eq("id", params.id)
     .order("created_at", { foreignTable: "replies", ascending: true })
@@ -78,7 +82,9 @@ export default async function ThreadPage({
     notFound();
   }
 
-  const roomName = thread.rooms?.name ?? "Somewhere in the house";
+  // rooms is an array; grab the first one if present
+  const roomName = thread.rooms?.[0]?.name ?? "Somewhere in the house";
+
   const created = new Date(thread.created_at);
   const createdLabel = created.toLocaleString(undefined, {
     month: "short",
@@ -189,4 +195,4 @@ export default async function ThreadPage({
       </div>
     </main>
   );
-    }
+}
