@@ -3,14 +3,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase, type Room } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+
+type ShareRoom = {
+  id: string;
+  slug: string;
+  name: string;
+};
 
 export default function SharePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRoomSlug = searchParams.get('room') || undefined;
 
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState<ShareRoom[]>([]);
   const [roomSlug, setRoomSlug] = useState<string | undefined>(initialRoomSlug);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -30,8 +36,7 @@ export default function SharePage() {
       }
 
       if (data && data.length > 0) {
-        setRooms(data as Room[]);
-        // if no room was preselected via ?room=, default to the first
+        setRooms(data as ShareRoom[]);
         if (!roomSlug) {
           setRoomSlug(data[0].slug);
         }
@@ -72,7 +77,6 @@ export default function SharePage() {
         return;
       }
 
-      // go back to the home/feed for that room
       router.push(`/home?room=${roomSlug}`);
     } catch (err) {
       console.error('Unexpected error creating thread:', err);
@@ -175,4 +179,4 @@ export default function SharePage() {
       </div>
     </main>
   );
-}
+            }
