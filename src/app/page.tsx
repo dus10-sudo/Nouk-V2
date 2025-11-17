@@ -2,79 +2,58 @@ import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 
-// Load Cinzel font
 const cinzel = localFont({
-  src: "../fonts/Cinzel-Regular.ttf",
+  src: "./fonts/Cinzel-Regular.ttf",
   variable: "--font-cinzel",
 });
 
 export default function LandingPage() {
   return (
     <main
-      className={`${cinzel.variable} font-sans relative w-full h-screen overflow-hidden`}
-      style={{
-        WebkitTapHighlightColor: "transparent",
-      }}
+      className={`
+        ${cinzel.variable}
+        relative w-full h-screen overflow-hidden 
+        flex items-center justify-center
+      `}
     >
+
       {/* Background Image */}
       <Image
         src="/home-bg.jpg"
-        alt="Nouk Forest Cottage"
-        priority
+        alt="Nouk Cottage"
         fill
-        className="object-cover brightness-[0.85]"
+        priority
+        className="object-cover absolute inset-0 -z-10 brightness-[0.85]"
       />
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
-
-      {/* Title */}
+      {/* Top Title */}
       <h1
         className="
-          absolute 
-          top-[16%] 
-          left-1/2 
-          -translate-x-1/2 
-          text-white 
-          text-6xl 
-          font-bold 
-          tracking-[0.5em] 
-          drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]
+          absolute top-[15vh] left-1/2 -translate-x-1/2
+          text-white text-6xl tracking-widest
+          drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]
         "
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
-        N O U K
+        NOUK
       </h1>
 
       {/* Enter Button */}
       <Link
         href="/home"
         className="
-          absolute 
-          left-1/2 
-          -translate-x-1/2 
-          bottom-[20%]   /* This keeps it above the safe area */
-          px-10 
-          py-5 
-          text-xl 
-          rounded-xl 
-          text-white
-          font-semibold
-          bg-black/40 
-          border 
-          border-white/70
+          absolute bottom-[15vh] left-1/2 -translate-x-1/2
+          px-10 py-4 
+          bg-black/40 border border-white/60 backdrop-blur-md
+          rounded-2xl text-white text-xl font-semibold
           shadow-[0_0_25px_rgba(255,255,255,0.8)]
-          backdrop-blur-md
-          transition-all
-          duration-300
+          transition-all duration-300
           hover:shadow-[0_0_40px_rgba(255,255,255,1)]
         "
-        style={{
-          paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
-        }}
       >
         Enter the House
       </Link>
+
     </main>
   );
 }
