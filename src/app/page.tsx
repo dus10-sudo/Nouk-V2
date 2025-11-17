@@ -3,7 +3,7 @@ import Link from "next/link";
 import localFont from "next/font/local";
 
 const cinzel = localFont({
-  src: "./fonts/Cinzel-Regular.ttf",
+  src: "../fonts/Cinzel-Regular.ttf",
   variable: "--font-cinzel",
 });
 
@@ -16,17 +16,14 @@ export default function LandingPage() {
         flex items-center justify-center
       `}
     >
-
-      {/* Background Image */}
       <Image
         src="/house-landing.jpg"
         alt="Nouk Forest Cottage"
         fill
         priority
-        className="absolute inset-0 -z-10 object-cover brightness-[0.9]"
+        className="absolute inset-0 -z-10 object-cover brightness-[0.92]"
       />
 
-      {/* Title */}
       <h1
         className="
           absolute top-[15vh] left-1/2 -translate-x-1/2
@@ -39,7 +36,6 @@ export default function LandingPage() {
         NOUK
       </h1>
 
-      {/* Button */}
       <Link
         href="/home"
         className="
@@ -54,7 +50,6 @@ export default function LandingPage() {
       >
         Enter the House
       </Link>
-
     </main>
   );
 }
