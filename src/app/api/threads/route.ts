@@ -1,82 +1,80 @@
 // src/app/api/threads/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { randomUUID } from 'crypto';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { roomSlug, title, body, link_url } = await req.json();
+    const { roomSlug, title, body, link_url } = await request.json();
 
-    if (!roomSlug || (!title && !body)) {
+    const trimmedTitle = (title ?? '').trim();
+    const trimmedBody = (body ?? '').trim();
+    const trimmedLink = (link_url ?? '').trim();
+
+    if (!roomSlug || (!trimmedTitle && !trimmedBody)) {
       return NextResponse.json(
-        { error: 'roomSlug and some text are required' },
+        { error: 'roomSlug and at least a title or body are required' },
         { status: 400 }
       );
     }
 
-    // 1) Look up the room by slug
-    const { data: room, error: roomError } = await supabase
+    // Find the room by slug
+    const { data: rooms, error: roomError } = await supabase
       .from('rooms')
       .select('id')
       .eq('slug', roomSlug)
-      .single();
+      .eq('is_active', true)
+      .limit(1);
 
-    if (roomError || !room) {
-      console.error('Room lookup failed', roomError);
+    if (roomError) {
+      console.error('[threads] room lookup error:', roomError);
       return NextResponse.json(
-        { error: 'Room not found' },
-        { status: 400 }
+        { error: 'Failed to find room' },
+        { status: 500 }
       );
     }
 
-    const userToken = randomUUID();
+    const room = rooms?.[0];
+    if (!room) {
+      return NextResponse.json(
+        { error: 'Room not found' },
+        { status: 404 }
+      );
+    }
 
-    // Use title if given, otherwise derive from the body
-    const threadTitle: string =
-      (title as string) ||
-      String(body || '')
-        .trim()
-        .slice(0, 80) ||
-      'Untitled';
+    const ttlHours = 24;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
 
-    // 2) Insert the thread
-    const { data: thread, error: threadError } = await supabase
+    // Insert the thread
+    const { data: inserted, error: threadError } = await supabase
       .from('threads')
       .insert({
         room_id: room.id,
-        title: threadTitle,
-        user_token: userToken,
-        // if you later add a link_url column to threads, you can include it here
-        // link_url: link_url || null,
+        title: trimmedTitle || null,
+        body: trimmedBody || null,
+        link_url: trimmedLink || null,
+        ttl_hours: ttlHours,
+        expires_at: expiresAt.toISOString(),
+        is_archived: false,
       })
       .select('id')
       .single();
 
-    if (threadError || !thread) {
-      console.error('Error inserting thread', threadError);
+    if (threadError) {
+      console.error('[threads] insert error:', threadError);
       return NextResponse.json(
         { error: 'Failed to create thread' },
         { status: 500 }
       );
     }
 
-    // 3) Insert the first reply if there is a body
-    if (body && String(body).trim().length > 0) {
-      const { error: replyError } = await supabase.from('replies').insert({
-        thread_id: thread.id,
-        user_token: userToken,
-        body: String(body).trim(),
-      });
-
-      if (replyError) {
-        console.error('Error inserting first reply', replyError);
-        // Don’t fail the whole thing, just log it
-      }
-    }
-
-    return NextResponse.json({ ok: true, threadId: thread.id });
+    // Respond with JSON so the client can redirect
+    return NextResponse.json(
+      { ok: true, threadId: inserted.id },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error(err);
+    console.error('[threads] unexpected error:', err);
     return NextResponse.json(
       { error: 'Invalid request' },
       { status: 400 }
