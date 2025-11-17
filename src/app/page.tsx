@@ -1,87 +1,74 @@
-"use client";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+// src/app/page.tsx
 import Image from "next/image";
+import Link from "next/link";
 import localFont from "next/font/local";
+import "./globals.css";
 
+// Load Cinzel font
 const cinzel = localFont({
-  src: "../fonts/Cinzel-Regular.ttf",
-  variable: "--font-cinzel"
+  src: "./fonts/Cinzel-Regular.ttf",
+  variable: "--font-cinzel",
 });
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [showContent, setShowContent] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => setShowContent(true), 100);
-  }, []);
-
   return (
-    <div 
+    <main
       className={`${cinzel.variable} relative h-screen w-screen overflow-hidden`}
     >
       {/* Background Image */}
-      <Image 
+      <Image
         src="/house-landing.jpg"
-        alt="Nouk Forest Path"
+        alt="Nouk Background"
         fill
         priority
-        quality={95}
         className="object-cover"
       />
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/30"></div>
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-black/20" />
 
-      {/* Centered Content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+      {/* Title */}
+      <h1
+        className="
+          absolute 
+          top-[22%] 
+          w-full 
+          text-center 
+          text-6xl 
+          text-white 
+          tracking-[0.6em] 
+          font-[var(--font-cinzel)]
+          drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]
+        "
+      >
+        N O U K
+      </h1>
 
-        {/* Title */}
-        <h1 
-          className={`
-            text-white 
-            tracking-[0.35em] 
-            text-5xl 
-            font-normal 
-            opacity-0 
-            animate-fadeIn 
-            ${showContent ? "opacity-100" : ""}
-            font-[var(--font-cinzel)]
-          `}
-          style={{ textShadow: "0px 0px 12px rgba(255,255,255,0.75)" }}
-        >
-          N O U K
-        </h1>
-
-        {/* Spacer */}
-        <div className="h-12"></div>
-
-        {/* Enter Button */}
-        <button
-          onClick={() => router.push("/home")}
-          className={`
-            relative
-            px-10 py-4 
-            rounded-xl
-            text-white 
-            text-xl 
-            font-[var(--font-cinzel)]
-            bg-black/40 
-            border border-white/70
-            shadow-lg
-            backdrop-blur-sm
-            opacity-0
-            animate-fadeIn delay-300
-            glow-pulse
-          `}
-          style={{
-            boxShadow: "0 0 25px rgba(173, 216, 230, 0.55)",
-          }}
-        >
-          Enter the House
-        </button>
-      </div>
-    </div>
+      {/* Enter Button */}
+      <Link
+        href="/home"
+        className="
+          absolute 
+          bottom-[12%] 
+          left-1/2 
+          -translate-x-1/2
+          px-8 
+          py-4 
+          text-xl 
+          font-semibold 
+          rounded-lg 
+          border 
+          border-white/70 
+          text-white 
+          backdrop-blur-md
+          shadow-[0_0_20px_rgba(255,255,255,0.7)]
+          hover:shadow-[0_0_30px_rgba(255,255,255,1)]
+          transition-all 
+          duration-300
+        "
+      >
+        Enter the House
+      </Link>
+    </main>
   );
 }
