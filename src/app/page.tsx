@@ -1,86 +1,63 @@
-// src/app/page.tsx
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const router = useRouter();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [hasNavigated, setHasNavigated] = useState(false);
+  const [playing, setPlaying] = useState(false);
 
-  function goInside() {
-    if (hasNavigated) return;
-    setHasNavigated(true);
-    router.push('/home');
-  }
+  const handleEnter = () => {
+    setPlaying(true);
 
-  function handleEnter() {
-    const video = videoRef.current;
-    if (!video) {
-      goInside();
-      return;
-    }
+    const video = document.getElementById("enter-video") as HTMLVideoElement;
+    if (!video) return;
 
-    setIsPlaying(true);
-    video.currentTime = 0;
+    video.play();
 
-    video
-      .play()
-      .catch(() => {
-        // autoplay blocked → just go in
-        goInside();
-      });
-
-    // safety timeout in case onEnded doesn’t fire
-    setTimeout(goInside, 4500);
-  }
+    video.onended = () => {
+      router.push("/home");
+    };
+  };
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden text-white">
-      {/* Background image */}
-      <div className="absolute inset-0 -z-10">
-        <Image
-          src="/house-landing.jpg"
-          alt="Forest cottage at night with lanterns"
-          fill
-          priority
-          className="object-cover"
-        />
-      </div>
+    <div className="relative h-screen w-screen overflow-hidden">
 
-      {/* Transition video laid over the background (but under UI) */}
-      <video
-        ref={videoRef}
-        src="/enter-house.mp4"
-        className={`pointer-events-none absolute inset-0 -z-0 h-full w-full object-cover transition-opacity duration-400 ${
-          isPlaying ? 'opacity-100' : 'opacity-0'
-        }`}
-        onEnded={goInside}
-        playsInline
+      {/* Forest background */}
+      <img
+        src="/house-landing.jpg"
+        alt="Nouk Forest"
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
-      {/* Foreground UI */}
-      <div className="relative z-20 flex min-h-screen flex-col items-center justify-between">
-        {/* Title at top */}
-        <div className="mt-16">
-          <h1 className="cinzel-title text-4xl md:text-5xl drop-shadow-[0_0_18px_rgba(0,0,0,0.9)]">
-            Nouk
-          </h1>
-        </div>
+      {/* Overlay for contrast (optional subtle dark fade) */}
+      <div className="absolute inset-0 bg-black bg-opacity-20" />
 
-        {/* spacer so things stay centered between top and bottom */}
-        <div className="flex-1" />
+      {/* NOUK title */}
+      <div className="absolute top-10 w-full text-center">
+        <h1 className="cinzel-title text-white text-4xl drop-shadow-lg">
+          N O U K
+        </h1>
+      </div>
 
-        {/* Enter button at bottom */}
-        <div className="mb-10">
-          <button type="button" onClick={handleEnter} className="glow-button">
-            Enter the house
+      {/* Enter Video (hidden) */}
+      {playing && (
+        <video
+          id="enter-video"
+          src="/enter-house.mp4"
+          className="absolute inset-0 w-full h-full object-cover"
+          playsInline
+        />
+      )}
+
+      {/* Enter Button */}
+      {!playing && (
+        <div className="absolute bottom-16 w-full flex justify-center">
+          <button onClick={handleEnter} className="glow-button">
+            Enter the House
           </button>
         </div>
-      </div>
-    </main>
+      )}
+    </div>
   );
 }
