@@ -1,133 +1,129 @@
-"use client";
+// src/app/home/page.tsx
+import Link from 'next/link';
+import { supabase, Room, Thread } from '@/lib/supabase';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+type HomePageProps = {
+  searchParams?: { room?: string };
+};
 
-type Thread = any; // keep flexible so we don't fight TS over field names
+async function getData(activeSlug?: string) {
+  const { data: rooms, error: roomsError } = await supabase
+    .from('rooms')
+    .select('id, slug, title')
+    .order('title', { ascending: true });
 
-export default function HomePage() {
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [loading, setLoading] = useState(true);
+  if (roomsError || !rooms || rooms.length === 0) {
+    return { rooms: [] as Room[], activeRoom: null as Room | null, threads: [] as Thread[] };
+  }
 
-  useEffect(() => {
-    async function loadThreads() {
-      try {
-        const res = await fetch("/api/threads", { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed to load threads");
-        const data = await res.json();
-        setThreads(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Error loading threads", err);
-        setThreads([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadThreads();
-  }, []);
+  const activeRoom =
+    rooms.find((r) => r.slug === activeSlug) ??
+    rooms[0];
+
+  const { data: threads, error: threadsError } = await supabase
+    .from('threads')
+    .select('id, room_id, title, body, link_url, created_at')
+    .eq('room_id', activeRoom.id)
+    .order('created_at', { ascending: false });
+
+  if (threadsError || !threads) {
+    return { rooms, activeRoom, threads: [] as Thread[] };
+  }
+
+  return { rooms, activeRoom, threads };
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const activeSlug = searchParams?.room;
+  const { rooms, activeRoom, threads } = await getData(activeSlug);
+
+  if (!activeRoom) {
+    return (
+      <main className="min-h-screen bg-[#f5eedf] flex items-center justify-center">
+        <p className="text-center text-sm text-neutral-700 px-4">
+          Nouk is almost ready, but there are no categories yet. Add a few rows
+          to the <code>rooms</code> table (e.g. gaming, music, movies) in Supabase.
+        </p>
+      </main>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#f4ebd6] text-[#33261a]">
-      {/* Hearth hero */}
-      <div className="relative w-full overflow-hidden rounded-b-3xl bg-black shadow-md">
-        <img
-          src="/house-interior.jpg"
-          alt="The Hearth inside Nouk"
-          className="h-48 w-full object-cover sm:h-56"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
-
-        <div className="absolute inset-x-0 bottom-4 px-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#f9e7c7]/80">
+    <main className="min-h-screen bg-[#f5eedf]">
+      <div className="max-w-2xl mx-auto px-4 pb-16 pt-8">
+        {/* Top title */}
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold text-neutral-900 text-center">
             Inside Nouk
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white drop-shadow">
-            The Hearth
           </h1>
-          <p className="mt-1 text-sm text-[#f9e7c7]/90">
-            Take a breath. See what&apos;s on people&apos;s minds tonight.
+          <p className="mt-1 text-sm text-neutral-600 text-center">
+            Small posts. Short conversations. Everything fades after a while.
           </p>
-        </div>
-      </div>
+        </header>
 
-      {/* Content container */}
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 pb-10 pt-6">
+        {/* Category tabs */}
+        <nav className="mb-6 flex gap-2 overflow-x-auto no-scrollbar">
+          {rooms.map((room) => {
+            const isActive = room.id === activeRoom.id;
+            return (
+              <Link
+                key={room.id}
+                href={room.slug === rooms[0].slug ? '/home' : `/home?room=${room.slug}`}
+                className={`whitespace-nowrap rounded-full border px-3 py-1 text-sm transition
+                  ${
+                    isActive
+                      ? 'bg-neutral-900 text-[#f5eedf] border-neutral-900'
+                      : 'bg-white/80 text-neutral-800 border-neutral-400 hover:bg-white'
+                  }`}
+              >
+                {room.title}
+              </Link>
+            );
+          })}
+        </nav>
+
         {/* Share button */}
-        <div className="flex justify-center">
+        <div className="mb-4 flex justify-end">
           <Link
-            href="/share"
-            className="inline-flex items-center justify-center rounded-full bg-[#f6873f] px-6 py-3 text-sm font-semibold text-white shadow-md shadow-[#f6873f]/40 hover:bg-[#f26f25] active:scale-[0.98] transition"
+            href={`/share?room=${activeRoom.slug}`}
+            className="rounded-full bg-neutral-900 text-[#f5eedf] text-sm font-medium px-4 py-2 shadow-md hover:bg-neutral-800 transition"
           >
             Share a Thought
           </Link>
         </div>
 
-        {/* Tiny hint */}
-        <p className="text-center text-xs text-[#7a6650]">
-          Threads stay for a little while, then quietly fade away.
-        </p>
-
-        {/* Feed */}
-        <div className="mt-2 flex flex-col gap-3 pb-4">
-          {loading && (
-            <p className="text-center text-sm text-[#7a6650]">Loading...</p>
-          )}
-
-          {!loading && threads.length === 0 && (
-            <p className="text-center text-sm text-[#7a6650]">
-              It&apos;s quiet here. Be the first to leave something at the
-              hearth.
-            </p>
-          )}
-
-          {!loading &&
-            threads.map((thread: any) => {
-              const created = thread.created_at
-                ? new Date(thread.created_at)
-                : null;
-              const timeString = created
-                ? created.toLocaleString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : "";
-
-              // try to guess room + alias fields without breaking if they don't exist
-              const roomName =
-                thread.roomName ||
-                thread.room_name ||
-                thread.room ||
-                (thread.rooms && thread.rooms[0]?.name) ||
-                "Room";
-
-              const alias =
-                thread.alias ||
-                thread.display_name ||
-                thread.user_alias ||
-                "";
-
-              return (
+        {/* Threads list */}
+        {threads.length === 0 ? (
+          <p className="text-sm text-neutral-600 text-center mt-10">
+            It&apos;s quiet in <span className="font-medium">{activeRoom.title}</span>.
+            Be the first to post something.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {threads.map((thread) => (
+              <li key={thread.id}>
                 <Link
-                  key={thread.id}
                   href={`/thread/${thread.id}`}
-                  className="block rounded-3xl bg-[#fbf3e2] px-4 py-3 shadow-sm shadow-black/5 border border-[#f0e0c5]"
+                  className="block rounded-2xl bg-white shadow-sm border border-neutral-200 px-4 py-3 hover:bg-white/90 transition"
                 >
-                  <div className="flex items-center justify-between text-xs text-[#7a6650] mb-1">
-                    <span className="font-medium">
-                      {alias ? `${alias} · ${roomName}` : roomName}
-                    </span>
-                    {timeString && <span>{timeString}</span>}
-                  </div>
-                  {thread.title && (
-                    <p className="text-sm text-[#33261a]">{thread.title}</p>
+                  <h2 className="text-sm font-semibold text-neutral-900 mb-1">
+                    {thread.title || '(no title)'}
+                  </h2>
+                  {thread.body && (
+                    <p className="text-xs text-neutral-700 line-clamp-2">
+                      {thread.body}
+                    </p>
                   )}
+                  <div className="mt-2 flex items-center justify-between text-[10px] text-neutral-500">
+                    <span>{activeRoom.title}</span>
+                    <span>{new Date(thread.created_at).toLocaleString()}</span>
+                  </div>
                 </Link>
-              );
-            })}
-        </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
