@@ -1,32 +1,35 @@
 // src/lib/supabase.ts
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-/* --------------------------------------------------------
-   ENV VALUES
---------------------------------------------------------- */
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-/* --------------------------------------------------------
-   1) SIMPLE BROWSER CLIENT
---------------------------------------------------------- */
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* --------------------------------------------------------
-   2) SERVER CLIENT (used in API routes)
---------------------------------------------------------- */
-export function createServerSupabase() {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase env vars');
 }
 
-/* --------------------------------------------------------
-   3) Function names compatible with older file imports
---------------------------------------------------------- */
-export function createBrowserSupabase() {
-  return supabase;
-}
+// Plain shared client used from server & client
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+// Very loose types on purpose so TypeScript doesn’t block builds
+export type Room = {
+  id: string;
+  slug: string;
+  title: string;
+};
+
+export type Thread = {
+  id: string;
+  room_id: string;
+  title: string;
+  body: string | null;
+  link_url: string | null;
+  created_at: string;
+};
+
+export type Reply = {
+  id: string;
+  thread_id: string;
+  body: string;
+  created_at: string;
+};
