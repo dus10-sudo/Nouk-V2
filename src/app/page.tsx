@@ -9,51 +9,58 @@ export default function LandingPage() {
 
   const handleEnter = () => {
     setPlaying(true);
+  };
 
-    const video = document.getElementById("enter-video") as HTMLVideoElement;
-    if (!video) return;
-
-    video.play();
-
-    video.onended = () => {
-      router.push("/home");
-    };
+  const handleVideoEnd = () => {
+    router.push("/home");
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Background: image OR video */}
+      {!playing ? (
+        <>
+          {/* Forest image */}
+          <img
+            src="/house-landing.jpg"
+            alt="Nouk Forest"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-      {/* Forest background */}
-      <img
-        src="/house-landing.jpg"
-        alt="Nouk Forest"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+          {/* Subtle dark overlay */}
+          <div className="absolute inset-0 bg-black bg-opacity-20" />
+        </>
+      ) : (
+        <>
+          {/* Entrance video */}
+          <video
+            src="/enter-house.mp4"
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            muted
+            playsInline
+            onEnded={handleVideoEnd}
+          />
+          {/* Optional: darker overlay while video plays */}
+          <div className="absolute inset-0 bg-black bg-opacity-10" />
+        </>
+      )}
 
-      {/* Overlay for contrast (optional subtle dark fade) */}
-      <div className="absolute inset-0 bg-black bg-opacity-20" />
-
-      {/* NOUK title */}
-      <div className="absolute top-10 w-full text-center">
+      {/* Title (kept on top even while video plays) */}
+      <div className="absolute top-10 w-full text-center pointer-events-none">
         <h1 className="cinzel-title text-white text-4xl drop-shadow-lg">
           N O U K
         </h1>
       </div>
 
-      {/* Enter Video (hidden) */}
-      {playing && (
-        <video
-          id="enter-video"
-          src="/enter-house.mp4"
-          className="absolute inset-0 w-full h-full object-cover"
-          playsInline
-        />
-      )}
-
-      {/* Enter Button */}
+      {/* Enter button – hidden once video starts */}
       {!playing && (
-        <div className="absolute bottom-16 w-full flex justify-center">
-          <button onClick={handleEnter} className="glow-button">
+        <div className="absolute bottom-10 w-full flex justify-center">
+          <button
+            type="button"
+            onClick={handleEnter}
+            className="glow-button"
+          >
             Enter the House
           </button>
         </div>
