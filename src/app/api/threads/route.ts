@@ -1,62 +1,46 @@
 // src/app/api/threads/route.ts
-import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
-import { createServerSupabase } from "@/lib/supabase";
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-export async function GET() {
-  const supabase = createServerSupabase();
-
-  const { data, error } = await supabase
-    .from("threads")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) {
-    console.error("[GET threads] Error:", error);
-    return NextResponse.json({ error: "Failed to fetch threads" }, { status: 500 });
-  }
-
-  return NextResponse.json({ threads: data ?? [] });
-}
-
-export async function POST(req: Request) {
-  const supabase = createServerSupabase();
-  
+export async function POST(request: Request) {
   try {
-    const { room_id, title, link_url } = await req.json();
-    const user_token = randomUUID();
+    const body = await request.json();
+    const { roomSlug, title, body: textBody, link_url } = body;
 
-    if (!room_id || (!title && !link_url)) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    if (!roomSlug) {
+      return NextResponse.json({ error: 'Missing roomSlug' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from("threads")
-      .insert({
-        id: randomUUID(),
-        room_id,
-        title: title || "Untitled Nouk",
-        link_url: link_url || null,
-        user_token,
-      })
-      .select("id")
+    // find room by slug
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('slug', roomSlug)
       .single();
 
-    if (error) {
-      console.error("[POST thread] Insert error:", error);
-      return NextResponse.json(
-        { error: "Could not create thread" },
-        { status: 500 }
-      );
+    if (roomError || !room) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 400 });
     }
 
-    return NextResponse.json({ id: data.id });
+    const { data: thread, error: threadError } = await supabase
+      .from('threads')
+      .insert({
+        room_id: room.id,
+        title: title || null,
+        body: textBody || null,
+        link_url: link_url || null,
+      })
+      .select('id')
+      .single();
+
+    if (threadError || !thread) {
+      console.error(threadError);
+      return NextResponse.json({ error: 'Failed to create thread' }, { status: 500 });
+    }
+
+    return NextResponse.json({ id: thread.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST thread] Unexpected error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
