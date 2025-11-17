@@ -1,7 +1,6 @@
 // src/app/page.tsx
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
@@ -19,6 +18,8 @@ export default function LandingPage() {
 
   const handleEnter = () => {
     const video = videoRef.current;
+
+    // no video? just go straight to /home
     if (!video) {
       goInside();
       return;
@@ -30,51 +31,49 @@ export default function LandingPage() {
     video
       .play()
       .catch(() => {
-        // if autoplay is blocked, just go in
+        // autoplay blocked – just go inside
         goInside();
       });
 
-    // safety fallback in case onEnded doesn't fire
+    // safety fallback in case onEnded never fires
     setTimeout(goInside, 4500);
   };
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-black">
-      {/* Background illustration */}
-      <div className="absolute inset-0">
-        <Image
-          src="/house-landing.jpg"
-          alt="Cozy house in the forest at night"
-          fill
-          priority
-          className="object-cover"
-        />
-      </div>
-
-      {/* Transition video (over the image) */}
+    <main
+      className="relative min-h-screen w-full overflow-hidden text-white"
+      style={{
+        backgroundImage: "url('/house-landing.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* transition video painted over the background */}
       <video
         ref={videoRef}
         src="/enter-house.mp4"
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-400 ${
+        className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-400 ${
           isPlaying ? 'opacity-100' : 'opacity-0'
         }`}
         onEnded={goInside}
         playsInline
       />
 
-      {/* Foreground UI */}
-      <div className="relative z-10 flex h-full flex-col">
-        {/* Title */}
-        <header className="pt-16 flex justify-center">
-          <h1 className="cinzel-title text-white text-4xl md:text-5xl drop-shadow-[0_0_18px_rgba(0,0,0,0.9)]">
+      {/* foreground UI */}
+      <div className="relative z-20 flex min-h-screen flex-col items-center justify-between">
+        {/* title */}
+        <div className="mt-14">
+          <h1 className="cinzel-title text-4xl md:text-5xl drop-shadow-[0_0_18px_rgba(0,0,0,0.9)]">
             Nouk
           </h1>
-        </header>
+        </div>
 
+        {/* bottom spacer so the title doesn't hug the top */}
         <div className="flex-1" />
 
-        {/* Button */}
-        <div className="pb-14 flex justify-center">
+        {/* button */}
+        <div className="mb-10">
           <button
             type="button"
             onClick={handleEnter}
