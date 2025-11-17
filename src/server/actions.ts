@@ -1,24 +1,28 @@
 // src/server/actions.ts
-"use server";
+'use server';
 
 import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
-import { createServerSupabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 const COOKIE_KEY = "nouk_user_token";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
+/**
+ * Ensure the user has a stable anonymous token stored in a cookie.
+ * Returns the token string.
+ */
 function ensureToken(): string {
-  const jar = cookies();
-  let token = jar.get(COOKIE_KEY)?.value;
+  const cookieStore = cookies();
+  let token = cookieStore.get(COOKIE_KEY)?.value;
 
   if (!token) {
     token = randomUUID();
-    jar.set(COOKIE_KEY, token, {
+    cookieStore.set(COOKIE_KEY, token, {
       httpOnly: true,
       sameSite: "lax",
-      maxAge: ONE_YEAR,
       path: "/",
+      maxAge: ONE_YEAR,
     });
   }
 
@@ -26,24 +30,24 @@ function ensureToken(): string {
 }
 
 /**
- * Optional server action to create a new thread.
- * You can wire a <form action={createThread}> to this later if you want.
+ * Generic server action for creating a thread.
+ * You don't *have* to use this right now since you're posting to /api/threads,
+ * but it's here so the file is stable and ready if you want server actions later.
  */
 export async function createThread(formData: FormData) {
-  const supabase = createServerSupabase();
   const user_token = ensureToken();
 
-  const room_id = (formData.get("room_id") as string) ?? "";
-  const rawTitle = (formData.get("title") as string) ?? "";
-  const rawLink = (formData.get("link_url") as string) ?? "";
+  const room_id = formData.get("room_id") as string | null;
+  const rawTitle = formData.get("title") as string | null;
+  const rawLink = formData.get("link_url") as string | null;
 
-  const title = rawTitle.trim();
-  const link_url = rawLink.trim() || null;
+  const title = (rawTitle ?? "").trim();
+  const link_url = (rawLink ?? "").trim() || null;
 
   if (!room_id || (!title && !link_url)) {
     return {
-      ok: false as const,
-      error: "Missing room or content.",
+      ok: false,
+      error: "Missing room or content",
     };
   }
 
@@ -59,15 +63,21 @@ export async function createThread(formData: FormData) {
     .single();
 
   if (error || !data?.id) {
-    console.error("[actions] createThread error", error);
+    console.error("[actions] createThread error:", error);
     return {
-      ok: false as const,
-      error: "Could not create the thread.",
+      ok: false,
+      error: "Failed to create thread",
     };
   }
 
   return {
-    ok: true as const,
+    ok: true,
     threadId: data.id as string,
   };
 }
+
+/**
+ * Stub for future server actions.
+ * Having at least one named export keeps the module valid.
+ */
+export const actionsReady = true;
