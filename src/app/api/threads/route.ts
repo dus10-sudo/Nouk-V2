@@ -1,64 +1,82 @@
-// src/app/api/replies/route.ts
+// src/app/api/threads/route.ts
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { randomUUID } from 'crypto';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const formData = await request.formData();
-    const thread_id = formData.get('thread_id') as string | null;
-    const rawBody = formData.get('body') as string | null;
-    const body = (rawBody ?? '').trim();
+    const { roomSlug, title, body, link_url } = await req.json();
 
-    // If we somehow got here without a thread_id, bail cleanly
-    if (!thread_id) {
-      console.error('[replies] Missing thread_id in POST');
+    if (!roomSlug || (!title && !body)) {
       return NextResponse.json(
-        { error: 'Missing thread_id' },
+        { error: 'roomSlug and some text are required' },
         { status: 400 }
       );
     }
 
-    // If the reply is empty, just bounce back to the thread without inserting
-    if (!body) {
-      return NextResponse.redirect(
-        new URL(`/thread/${thread_id}`, request.url)
+    // 1) Look up the room by slug
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('id')
+      .eq('slug', roomSlug)
+      .single();
+
+    if (roomError || !room) {
+      console.error('Room lookup failed', roomError);
+      return NextResponse.json(
+        { error: 'Room not found' },
+        { status: 400 }
       );
     }
 
-    // Insert the reply
-    const { error: insertError } = await supabase.from('replies').insert({
-      thread_id,
-      body,
-      // If your replies table has a user_token column and it's NOT NULL,
-      // we can add it here later once we decide how to handle identities.
-      // user_token,
-    });
+    const userToken = randomUUID();
 
-    if (insertError) {
-      console.error('[replies] Error inserting reply:', insertError);
-      // Still redirect to the thread, but you could also surface an error query param
-      return NextResponse.redirect(
-        new URL(`/thread/${thread_id}`, request.url)
-      );
-    }
+    // Use title if given, otherwise derive from the body
+    const threadTitle: string =
+      (title as string) ||
+      String(body || '')
+        .trim()
+        .slice(0, 80) ||
+      'Untitled';
 
-    // Optionally, bump last_activity on the thread (this is safe if the column exists)
-    const { error: updateError } = await supabase
+    // 2) Insert the thread
+    const { data: thread, error: threadError } = await supabase
       .from('threads')
-      .update({ last_activity: new Date().toISOString() })
-      .eq('id', thread_id);
+      .insert({
+        room_id: room.id,
+        title: threadTitle,
+        user_token: userToken,
+        // if you later add a link_url column to threads, you can include it here
+        // link_url: link_url || null,
+      })
+      .select('id')
+      .single();
 
-    if (updateError) {
-      console.error('[replies] Error updating thread last_activity:', updateError);
-      // Not fatal – we still send the user back to the thread
+    if (threadError || !thread) {
+      console.error('Error inserting thread', threadError);
+      return NextResponse.json(
+        { error: 'Failed to create thread' },
+        { status: 500 }
+      );
     }
 
-    // Redirect back to the thread after posting
-    return NextResponse.redirect(
-      new URL(`/thread/${thread_id}`, request.url)
-    );
+    // 3) Insert the first reply if there is a body
+    if (body && String(body).trim().length > 0) {
+      const { error: replyError } = await supabase.from('replies').insert({
+        thread_id: thread.id,
+        user_token: userToken,
+        body: String(body).trim(),
+      });
+
+      if (replyError) {
+        console.error('Error inserting first reply', replyError);
+        // Don’t fail the whole thing, just log it
+      }
+    }
+
+    return NextResponse.json({ ok: true, threadId: thread.id });
   } catch (err) {
-    console.error('[replies] Unexpected error:', err);
+    console.error(err);
     return NextResponse.json(
       { error: 'Invalid request' },
       { status: 400 }
