@@ -11,68 +11,69 @@ export default function LandingPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  function navigateOnce() {
+  const goInside = () => {
     if (hasNavigated) return;
     setHasNavigated(true);
     router.push('/home');
-  }
+  };
 
   const handleEnter = () => {
-    setIsPlaying(true);
     const video = videoRef.current;
-
-    if (video) {
-      video.currentTime = 0;
-      video
-        .play()
-        .catch(() => {
-          // if autoplay is blocked, just go inside
-          navigateOnce();
-        });
-      // safety fallback if onended never fires
-      setTimeout(navigateOnce, 4000);
-    } else {
-      navigateOnce();
+    if (!video) {
+      goInside();
+      return;
     }
+
+    setIsPlaying(true);
+    video.currentTime = 0;
+
+    video
+      .play()
+      .catch(() => {
+        // if autoplay is blocked, just go in
+        goInside();
+      });
+
+    // safety fallback in case onEnded doesn't fire
+    setTimeout(goInside, 4500);
   };
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background image */}
+    <main className="fixed inset-0 overflow-hidden bg-black">
+      {/* Background illustration */}
       <div className="absolute inset-0">
         <Image
           src="/house-landing.jpg"
-          alt="Cozy house in the woods at night"
+          alt="Cozy house in the forest at night"
           fill
           priority
           className="object-cover"
         />
       </div>
 
-      {/* Enter animation video overlay */}
+      {/* Transition video (over the image) */}
       <video
         ref={videoRef}
         src="/enter-house.mp4"
         className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-400 ${
           isPlaying ? 'opacity-100' : 'opacity-0'
         }`}
-        onEnded={navigateOnce}
+        onEnded={goInside}
         playsInline
       />
 
-      {/* Foreground content */}
+      {/* Foreground UI */}
       <div className="relative z-10 flex h-full flex-col">
-        {/* BIG NOUK title, near the top/center */}
-        <header className="pt-20 flex justify-center">
-          <h1 className="cinzel-title text-4xl md:text-5xl text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.7)]">
+        {/* Title */}
+        <header className="pt-16 flex justify-center">
+          <h1 className="cinzel-title text-white text-4xl md:text-5xl drop-shadow-[0_0_18px_rgba(0,0,0,0.9)]">
             Nouk
           </h1>
         </header>
 
-        {/* Spacer pushes button toward lower third */}
         <div className="flex-1" />
 
-        {/* Enter button */}
+        {/* Button */}
         <div className="pb-14 flex justify-center">
           <button
             type="button"
