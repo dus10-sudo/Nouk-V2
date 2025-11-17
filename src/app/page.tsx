@@ -19,17 +19,17 @@ export default function LandingPage() {
 
   const handleEnter = () => {
     setIsPlaying(true);
-
     const video = videoRef.current;
+
     if (video) {
       video.currentTime = 0;
       video
         .play()
         .catch(() => {
-          // if browser blocks playback, just go inside
+          // if autoplay is blocked, just go inside
           navigateOnce();
         });
-      // safety fallback in case onended doesn't fire
+      // safety fallback if onended never fires
       setTimeout(navigateOnce, 4000);
     } else {
       navigateOnce();
@@ -49,7 +49,7 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Enter video overlay (fades in over the image when playing) */}
+      {/* Enter animation video overlay */}
       <video
         ref={videoRef}
         src="/enter-house.mp4"
@@ -60,23 +60,24 @@ export default function LandingPage() {
         playsInline
       />
 
-      {/* Overlay content: Nouk title + button */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-between py-10">
-        {/* Top title */}
-        <div className="mt-2 flex flex-col items-center">
-          <div className="rounded-[18px] bg-black/45 px-5 py-2">
-            <span className="cinzel-title text-[20px] uppercase tracking-[0.35em] text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.55)]">
-              Nouk
-            </span>
-          </div>
-        </div>
+      {/* Foreground content */}
+      <div className="relative z-10 flex h-full flex-col">
+        {/* BIG NOUK title, near the top/center */}
+        <header className="pt-20 flex justify-center">
+          <h1 className="cinzel-title text-4xl md:text-5xl text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.7)]">
+            Nouk
+          </h1>
+        </header>
 
-        {/* Bottom button */}
-        <div className="mb-10 flex flex-col items-center gap-3">
+        {/* Spacer pushes button toward lower third */}
+        <div className="flex-1" />
+
+        {/* Enter button */}
+        <div className="pb-14 flex justify-center">
           <button
             type="button"
             onClick={handleEnter}
-            className="glow-button rounded-full px-8 py-3 text-[14px] font-medium text-white"
+            className="glow-button"
           >
             Enter the house
           </button>
